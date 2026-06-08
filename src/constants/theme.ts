@@ -7,20 +7,31 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
+// Color tokens for the "Projeto de Monitoramento de Florestas"
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#072A1B', // deep forest text
+    background: '#FFFFFF',
+    backgroundElement: '#F3FFF6',
+    backgroundSelected: '#E6FFF0',
+    textSecondary: '#506658',
+    primary: '#0B6623', // forest green
+    accent: '#071E3D', // space dark blue
+    warning: '#FFB400', // amber/orange for alerts
+    danger: '#FF3B30', // critical red
+    success: '#2E9E47',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: '#FFFFFF',
+    background: '#071E3D', // space dark blue
+    backgroundElement: '#0F2B4A',
+    backgroundSelected: '#153652',
+    textSecondary: '#A3C6B7',
+    primary: '#2EC18A',
+    accent: '#79A9FF',
+    warning: '#FFB400',
+    danger: '#FF6B6B',
+    success: '#48C77B',
   },
 } as const;
 

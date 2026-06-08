@@ -7,3 +7,30 @@
   --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
 }
+
+/* Theme color tokens (light by default). Use [data-theme="dark"] for dark overrides. */
+:root {
+  --color-primary: #0B6623;
+  --color-accent: #071E3D;
+  --color-background: #FFFFFF;
+  --color-background-element: #F3FFF6;
+  --color-background-selected: #E6FFF0;
+  --color-text: #072A1B;
+  --color-text-secondary: #506658;
+  --color-warning: #FFB400;
+  --color-danger: #FF3B30;
+  --color-success: #2E9E47;
+}
+
+[data-theme="dark"] {
+  --color-primary: #2EC18A;
+  --color-accent: #79A9FF;
+  --color-background: #071E3D;
+  --color-background-element: #0F2B4A;
+  --color-background-selected: #153652;
+  --color-text: #FFFFFF;
+  --color-text-secondary: #A3C6B7;
+  --color-warning: #FFB400;
+  --color-danger: #FF6B6B;
+  --color-success: #48C77B;
+}
