@@ -1,6 +1,7 @@
 import { Link } from 'expo-router';
-import { Pressable, SafeAreaView, StyleSheet } from 'react-native';
+import { Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
 
+import { Card } from '@/components/card';
 import { Header } from '@/components/header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -16,15 +17,54 @@ export default function HomeScreen() {
           Monitoramento de Florestas
         </ThemedText>
 
-        <ThemedText style={styles.lead}>
-          Plataforma inicial para visualização de dados, alertas e sensores por satélite.
-        </ThemedText>
+        <ThemedText style={styles.lead}>Plataforma inicial para visualização de dados e alertas.</ThemedText>
 
-        <Link href="/explore" asChild>
-          <Pressable style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
-            <ThemedText type="linkPrimary">Explorar dados</ThemedText>
-          </Pressable>
-        </Link>
+        <View style={styles.grid}>
+          <Link href="/monitoring" asChild>
+            <Pressable>
+              <Card>
+                <ThemedText type="smallBold">Monitoramento</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">Status de satélites e loop</ThemedText>
+              </Card>
+            </Pressable>
+          </Link>
+
+          <Link href="/regions" asChild>
+            <Pressable>
+              <Card>
+                <ThemedText type="smallBold">Regiões</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">Amazônia, Cerrado, Pantanal</ThemedText>
+              </Card>
+            </Pressable>
+          </Link>
+
+          <Link href="/alerts" asChild>
+            <Pressable>
+              <Card>
+                <ThemedText type="smallBold">Alertas</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">Queimadas e desmatamento</ThemedText>
+              </Card>
+            </Pressable>
+          </Link>
+
+          <Link href="/report" asChild>
+            <Pressable>
+              <Card>
+                <ThemedText type="smallBold">Relatar</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">Criar/editar ocorrência</ThemedText>
+              </Card>
+            </Pressable>
+          </Link>
+
+          <Link href="/team" asChild>
+            <Pressable>
+              <Card>
+                <ThemedText type="smallBold">Equipe</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">Integrantes do projeto</ThemedText>
+              </Card>
+            </Pressable>
+          </Link>
+        </View>
       </SafeAreaView>
     </ThemedView>
   );
@@ -35,12 +75,15 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    justifyContent: 'center',
     maxWidth: MaxContentWidth,
   },
   title: { textAlign: 'center' },
   lead: { textAlign: 'center', marginVertical: Spacing.two },
-  button: { paddingHorizontal: Spacing.four, paddingVertical: Spacing.two, borderRadius: Spacing.four },
-  pressed: { opacity: 0.8 },
+  grid: {
+    marginTop: Spacing.four,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+  },
 });
