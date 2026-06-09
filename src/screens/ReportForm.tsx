@@ -1,23 +1,27 @@
-import { useRouter } from 'expo-router';
+import { useRouter, useSearchParams } from 'expo-router';
 import React from 'react';
-import { SafeAreaView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, SafeAreaView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Header } from '@/components/header';
+import { Loading } from '@/components/loading';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { ApiResponse, createOccurrence } from '@/services/api';
+import { ApiResponse, createOccurrence, getOccurrenceById, updateOccurrence } from '@/services/api';
 
 export default function ReportFormScreen() {
   const router = useRouter();
+  const params = useSearchParams();
+  const editId = params.id as string | undefined;
   const [regionName, setRegionName] = React.useState('');
   const [satelliteCode, setSatelliteCode] = React.useState('');
   const [status, setStatus] = React.useState<'PRESERVADA' | 'DESMATAMENTO' | 'QUEIMADA' | 'RISCO' | ''>('QUEIMADA');
   const [vegetationColor, setVegetationColor] = React.useState<'VERDE' | 'MARROM' | 'PRETO' | ''>('PRETO');
   const [description, setDescription] = React.useState('');
   const [loading, setLoading] = React.useState(false);
+  const [loadingExisting, setLoadingExisting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const validate = () => {
@@ -46,13 +50,22 @@ export default function ReportFormScreen() {
         description: description.trim(),
         detectedAt: new Date().toISOString(),
       };
-
-      const res: ApiResponse<any> = await createOccurrence(payload as any);
-      if (res.success) {
-        // success: navigate back to alerts (will trigger reload)
-        router.push('/alerts');
+      if (editId) {
+        const res = await updateOccurrence(editId, payload as any);
+        if (res.success) {
+          Alert.alert('Sucesso', 'Ocorrência atualizada.');
+          router.push(`/alerts?refresh=${Date.now()}`);
+        } else {
+          setError(res.error || 'Falha ao atualizar ocorrência.');
+        }
       } else {
-        setError(res.error || 'Falha ao salvar ocorrência.');
+        const res: ApiResponse<any> = await createOccurrence(payload as any);
+        if (res.success) {
+          Alert.alert('Sucesso', 'Ocorrência criada.');
+          router.push(`/alerts?refresh=${Date.now()}`);
+        } else {
+          setError(res.error || 'Falha ao salvar ocorrência.');
+        }
       }
     } catch (e: any) {
       setError(e?.message || 'Erro desconhecido');
@@ -61,12 +74,45 @@ export default function ReportFormScreen() {
     }
   };
 
+  React.useEffect(() => {
+    let mounted = true;
+    async function loadExisting() {
+      if (!editId) return;
+      setLoadingExisting(true);
+      setError(null);
+      try {
+        const res = await getOccurrenceById(editId);
+        if (!mounted) return;
+        if (res.success && res.data) {
+          const occ = res.data;
+          setRegionName(occ.regionName ?? '');
+          setSatelliteCode(occ.satelliteCode ?? '');
+          setStatus((occ.status as any) ?? '');
+          setVegetationColor((occ.vegetationColor as any) ?? '');
+          setDescription(occ.description ?? '');
+        } else {
+          setError(res.error || 'Falha ao carregar ocorrência.');
+        }
+      } catch (err: any) {
+        setError(err?.message || 'Erro desconhecido ao carregar.');
+      } finally {
+        if (mounted) setLoadingExisting(false);
+      }
+    }
+
+    loadExisting();
+    return () => {
+      mounted = false;
+    };
+  }, [editId]);
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <Header title="Relatar Ocorrência" subtitle="Criar ou editar um relatório" />
 
         <Card>
+          {loadingExisting ? <Loading /> : null}
           <ThemedText type="smallBold">Região</ThemedText>
           <TextInput value={regionName} onChangeText={setRegionName} placeholder="Ex: Amazônia" style={styles.input} />
 

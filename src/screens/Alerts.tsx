@@ -1,6 +1,6 @@
-import { useSearchParams } from 'expo-router';
+import { useRouter, useSearchParams } from 'expo-router';
 import React from 'react';
-import { FlatList, SafeAreaView, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/card';
 import { Header } from '@/components/header';
@@ -8,7 +8,7 @@ import { Loading } from '@/components/loading';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { getOccurrences, Occurrence } from '@/services/api';
+import { deleteOccurrence, getOccurrences, Occurrence } from '@/services/api';
 
 const SAMPLE_FALLBACK: Occurrence[] = [
   {
@@ -24,10 +24,13 @@ const SAMPLE_FALLBACK: Occurrence[] = [
 
 export default function AlertsScreen() {
   const params = useSearchParams();
+  const router = useRouter();
   const region = (params.region as string) || '';
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [data, setData] = React.useState<Occurrence[] | null>(null);
+  const [deletingId, setDeletingId] = React.useState<string | number | null>(null);
+  const refresh = params.refresh as string | undefined;
 
   React.useEffect(() => {
     let mounted = true;
@@ -57,7 +60,7 @@ export default function AlertsScreen() {
     return () => {
       mounted = false;
     };
-  }, [region]);
+  }, [region, refresh]);
 
   const occurrences = (data ?? []).filter((o) => {
     if (!region) return true;
@@ -87,12 +90,47 @@ export default function AlertsScreen() {
                     <ThemedText type="small" themeColor="textSecondary">{item.regionName} • {item.satelliteCode}</ThemedText>
                     {item.description ? <ThemedText type="small">{item.description}</ThemedText> : null}
                   </View>
-                  <ThemedText
-                    type="small"
-                    themeColor={item.status === 'QUEIMADA' || item.status === 'DESMATAMENTO' ? 'danger' : item.status === 'RISCO' ? 'warning' : 'success'}
-                  >
-                    {item.status}
-                  </ThemedText>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <ThemedText
+                      type="small"
+                      themeColor={item.status === 'QUEIMADA' || item.status === 'DESMATAMENTO' ? 'danger' : item.status === 'RISCO' ? 'warning' : 'success'}
+                    >
+                      {item.status}
+                    </ThemedText>
+
+                    <View style={styles.cardActions}>
+                      <Pressable onPress={() => router.push(`/report?id=${item.id}`)} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}>
+                        <ThemedText type="smallBold">Ver / Editar</ThemedText>
+                      </Pressable>
+
+                      <Pressable
+                        onPress={() =>
+                          Alert.alert('Confirmar exclusão', 'Deseja excluir esta ocorrência?', [
+                            { text: 'Cancelar', style: 'cancel' },
+                            {
+                              text: 'Excluir',
+                              style: 'destructive',
+                              onPress: async () => {
+                                setDeletingId(item.id);
+                                const res = await deleteOccurrence(item.id);
+                                setDeletingId(null);
+                                if (res.success) {
+                                  Alert.alert('Sucesso', 'Ocorrência excluída.');
+                                  setData((prev) => prev?.filter((o) => String(o.id) !== String(item.id)) ?? null);
+                                } else {
+                                  Alert.alert('Erro', res.error || 'Falha ao excluir ocorrência.');
+                                }
+                              },
+                            },
+                          ])
+                        }
+                        style={({ pressed }) => [styles.actionButton, { marginLeft: Spacing.two }, pressed && styles.pressed]}
+                        disabled={deletingId != null}
+                      >
+                        <ThemedText type="smallBold" themeColor="danger">{deletingId === item.id ? 'Excluindo...' : 'Excluir'}</ThemedText>
+                      </Pressable>
+                    </View>
+                  </View>
                 </View>
               </Card>
             )}
