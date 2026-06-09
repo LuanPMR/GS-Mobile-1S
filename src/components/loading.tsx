@@ -9,8 +9,8 @@ export function Loading({ label = 'Carregando...' }: { label?: string }) {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="small" color={theme.primary} />
-      <ThemedText style={styles.label}>{label}</ThemedText>
+      <ActivityIndicator size="large" color={theme.primary} />
+      <ThemedText type="smallBold" style={styles.label}>{label}</ThemedText>
     </View>
   );
 }
@@ -19,8 +19,10 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.two,
   },
   label: {
-    marginLeft: Spacing.two,
+    marginLeft: Spacing.four,
   },
 });

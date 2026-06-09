@@ -12,10 +12,15 @@ export const Colors = {
   light: {
     text: '#072A1B', // deep forest text
     background: '#FFFFFF',
+    surface: '#F8FFF9',
+    surfaceElevated: '#F0FFF4',
     backgroundElement: '#F3FFF6',
     backgroundSelected: '#E6FFF0',
     textSecondary: '#506658',
+    muted: '#7E9584',
+    border: '#E6F3EA',
     primary: '#0B6623', // forest green
+    onPrimary: '#FFFFFF',
     accent: '#071E3D', // space dark blue
     warning: '#FFB400', // amber/orange for alerts
     danger: '#FF3B30', // critical red
@@ -24,10 +29,15 @@ export const Colors = {
   dark: {
     text: '#FFFFFF',
     background: '#071E3D', // space dark blue
+    surface: '#0F2B4A',
+    surfaceElevated: '#153652',
     backgroundElement: '#0F2B4A',
     backgroundSelected: '#153652',
     textSecondary: '#A3C6B7',
+    muted: '#7EAFA0',
+    border: '#153652',
     primary: '#2EC18A',
+    onPrimary: '#072A1B',
     accent: '#79A9FF',
     warning: '#FFB400',
     danger: '#FF6B6B',
@@ -61,6 +71,15 @@ export const Fonts = Platform.select({
     mono: 'var(--font-mono)',
   },
 });
+
+export const FontSizes = {
+  tiny: 12,
+  small: 14,
+  base: 16,
+  subtitle: 18,
+  title: 28,
+  hero: 36,
+} as const;
 
 export const Spacing = {
   half: 2,

@@ -15,14 +15,33 @@ type Props = {
 export function Button({ title, onPress, variant = 'primary', loading, style }: Props) {
   const theme = useTheme();
 
-  const bgColor =
-    variant === 'primary' ? theme.primary : variant === 'secondary' ? theme.backgroundElement : 'transparent';
-  const color = variant === 'primary' ? '#fff' : theme.text;
+  let bgColor: string | undefined = undefined;
+  let color: string | undefined = undefined;
+  let borderWidth = 0;
+  let borderColor: string | undefined = undefined;
+
+  if (variant === 'primary') {
+    bgColor = theme.primary;
+    color = theme.onPrimary ?? '#fff';
+  } else if (variant === 'secondary') {
+    bgColor = 'transparent';
+    color = theme.primary;
+    borderWidth = 1;
+    borderColor = theme.primary;
+  } else {
+    // ghost
+    bgColor = 'transparent';
+    color = theme.text;
+  }
 
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.button, { backgroundColor: bgColor, opacity: pressed ? 0.8 : 1 }, style]}
+      style={({ pressed }) => [
+        styles.button,
+        { backgroundColor: bgColor, borderWidth, borderColor, opacity: pressed ? 0.85 : 1 },
+        style,
+      ]}
       disabled={!!loading}
     >
       <ThemedText style={[styles.text, { color }]}>{loading ? 'Carregando...' : title}</ThemedText>

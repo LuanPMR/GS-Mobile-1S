@@ -1,10 +1,10 @@
 import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
 
-import { Fonts, ThemeColor } from '@/constants/theme';
+import { Fonts, FontSizes, ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
+  type?: 'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code' | 'caption';
   themeColor?: ThemeColor;
 };
 
@@ -21,8 +21,9 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
         type === 'smallBold' && styles.smallBold,
         type === 'subtitle' && styles.subtitle,
         type === 'link' && styles.link,
-        type === 'linkPrimary' && { color: theme.primary },
+        type === 'linkPrimary' && { color: theme.primary, ...styles.linkPrimary },
         type === 'code' && styles.code,
+        type === 'caption' && styles.caption,
         style,
       ]}
       {...rest}
@@ -32,42 +33,47 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 
 const styles = StyleSheet.create({
   small: {
-    fontSize: 14,
+    fontSize: FontSizes.small,
     lineHeight: 20,
-    fontWeight: 500,
+    fontWeight: '600' as any,
   },
   smallBold: {
-    fontSize: 14,
+    fontSize: FontSizes.small,
     lineHeight: 20,
-    fontWeight: 700,
+    fontWeight: '700' as any,
   },
   default: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: 500,
+    fontSize: FontSizes.base,
+    lineHeight: 22,
+    fontWeight: '600' as any,
   },
   title: {
-    fontSize: 48,
-    fontWeight: 600,
-    lineHeight: 52,
+    fontSize: FontSizes.title,
+    fontWeight: '700' as any,
+    lineHeight: 36,
   },
   subtitle: {
-    fontSize: 32,
-    lineHeight: 44,
-    fontWeight: 600,
+    fontSize: FontSizes.subtitle,
+    lineHeight: 26,
+    fontWeight: '700' as any,
   },
   link: {
-    lineHeight: 30,
-    fontSize: 14,
+    lineHeight: 20,
+    fontSize: FontSizes.small,
+    textDecorationLine: 'underline',
   },
   linkPrimary: {
-    lineHeight: 30,
-    fontSize: 14,
-    color: '#3c87f7',
+    lineHeight: 20,
+    fontSize: FontSizes.small,
+  },
+  caption: {
+    fontSize: FontSizes.tiny,
+    lineHeight: 18,
+    color: '#7a8f7e',
   },
   code: {
     fontFamily: Fonts.mono,
-    fontWeight: Platform.select({ android: 700 }) ?? 500,
+    fontWeight: Platform.select({ android: '700' as any }) ?? ('500' as any),
     fontSize: 12,
   },
 });
