@@ -9,7 +9,8 @@ import { Loading } from '@/components/loading';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { deleteAlert, getAlertsRaw } from '@/services/alertService';
+import { deleteAlert, getAlertsRaw, resolveAlert } from '@/services/alertService';
+import { Link } from 'expo-router';
 
 type AlertDisplay = {
   id: number | string;
@@ -91,7 +92,16 @@ export default function AlertsScreen() {
         ) : occurrences.length === 0 ? (
           <ThemedText type="small">Nenhuma ocorrência encontrada.</ThemedText>
         ) : (
-          <FlatList
+          <>
+            <View style={{ marginBottom: Spacing.two }}>
+              <Link href={{ pathname: '/alert-form' }} asChild>
+                <Pressable>
+                  <Button title="Novo alerta" />
+                </Pressable>
+              </Link>
+            </View>
+
+            <FlatList
             data={occurrences}
             keyExtractor={(a) => String(a.id)}
             renderItem={({ item }) => (
@@ -110,8 +120,35 @@ export default function AlertsScreen() {
                     <ThemedText type="caption">{item.dataCriacao ? new Date(item.dataCriacao).toLocaleString() : ''}</ThemedText>
 
                     <View style={styles.cardActions}>
-                      <Pressable onPress={() => router.push(`/report?id=${item.id}`)} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}>
+                      <Pressable onPress={() => router.push(`/alert-form?id=${item.id}`)} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}>
                         <ThemedText type="smallBold">Ver / Editar</ThemedText>
+                      </Pressable>
+
+                      <Pressable
+                        onPress={async () => {
+                          const ok = await new Promise<boolean>((resolve) => {
+                            Alert.alert('Confirmar', 'Deseja marcar este alerta como resolvido?', [
+                              { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+                              { text: 'Resolver', onPress: () => resolve(true) },
+                            ]);
+                          });
+
+                          if (!ok) return;
+                          try {
+                            const res = await resolveAlert(item.id as any);
+                            if (res.success) {
+                              Alert.alert('Sucesso', 'Alerta marcado como resolvido.');
+                              setData((prev) => prev?.map((d) => (String(d.id) === String(item.id) ? { ...d, resolvido: true } : d)) ?? null);
+                            } else {
+                              Alert.alert('Erro', res.error || 'Falha ao resolver alerta.');
+                            }
+                          } catch (e: any) {
+                            Alert.alert('Erro', e?.message || 'Erro desconhecido');
+                          }
+                        }}
+                        style={({ pressed }) => [styles.actionButton, { marginLeft: Spacing.two }, pressed && styles.pressed]}
+                      >
+                        <ThemedText type="smallBold" themeColor="success">Resolver</ThemedText>
                       </Pressable>
 
                       <Pressable

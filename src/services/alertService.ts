@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ApiResponse, deleteJson, getJson, postJson, putJson } from './apiClient';
 
 // Backend DTO shape (partial)
@@ -65,58 +66,235 @@ function mapDtoToOccurrence(dto: any): Occurrence {
   };
 }
 
+// Local storage keys for alerts (fallback when backend not available)
+const STORAGE_KEY = 'nexusverde_alerts_v1';
+const LAST_ID_KEY = 'nexusverde_alerts_last_id';
+
+const DEFAULT_ALERTS: AlertaAmbientalDto[] = [];
+
+async function loadLocalAlerts(): Promise<AlertaAmbientalDto[]> {
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      await AsyncStorage.setItem(LAST_ID_KEY, '0');
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_ALERTS));
+      return DEFAULT_ALERTS;
+    }
+    const parsed = JSON.parse(raw) as AlertaAmbientalDto[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error('Failed to load alerts from AsyncStorage', e);
+    return DEFAULT_ALERTS;
+  }
+}
+
+async function saveLocalAlerts(items: AlertaAmbientalDto[]) {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  } catch (e) {
+    console.error('Failed to save alerts to AsyncStorage', e);
+    throw e;
+  }
+}
+
+
 export async function getAlerts(): Promise<ApiResponse<AlertaAmbientalDto[] | Occurrence[]>> {
-  const res = await getJson<AlertaAmbientalDto[]>('AlertasAmbientais');
-  if (!res.success) return { success: true, data: SAMPLE_FALLBACK } as ApiResponse<any>;
-  // map to app occurrences for compatibility
-  return { success: true, data: res.data!.map(mapDtoToOccurrence) } as ApiResponse<any>;
+  try {
+    const res = await getJson<AlertaAmbientalDto[]>('AlertasAmbientais');
+    if (res.success && res.data) return { success: true, data: res.data.map(mapDtoToOccurrence) } as ApiResponse<any>;
+  } catch (e) {
+    // ignore and fallback to local
+  }
+
+  // Fallback to local storage
+  try {
+    const local = await loadLocalAlerts();
+    return { success: true, data: local.map(mapDtoToOccurrence) } as ApiResponse<any>;
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Falha ao carregar alertas.' };
+  }
 }
 
 // Raw DTO access when UI needs original fields
 export async function getAlertsRaw(): Promise<ApiResponse<AlertaAmbientalDto[]>> {
-  const res = await getJson<AlertaAmbientalDto[]>('AlertasAmbientais');
-  if (!res.success) return { success: false, error: res.error, status: res.status };
-  return res;
+  try {
+    const res = await getJson<AlertaAmbientalDto[]>('AlertasAmbientais');
+    if (res.success && res.data) return res;
+  } catch (e) {
+    // ignore
+  }
+
+  try {
+    const local = await loadLocalAlerts();
+    return { success: true, data: local } as ApiResponse<any>;
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Falha ao carregar alertas.' };
+  }
 }
 
 export async function getAlertById(id: number | string): Promise<ApiResponse<Occurrence>> {
-  const res = await getJson<AlertaAmbientalDto>(`AlertasAmbientais/${id}`);
-  if (!res.success) return { success: false, error: res.error, status: res.status };
-  return { success: true, data: mapDtoToOccurrence(res.data) } as ApiResponse<any>;
+  try {
+    const res = await getJson<AlertaAmbientalDto>(`AlertasAmbientais/${id}`);
+    if (res.success && res.data) return { success: true, data: mapDtoToOccurrence(res.data) } as ApiResponse<any>;
+  } catch (e) {
+    // fallback
+  }
+
+  try {
+    const local = await loadLocalAlerts();
+    const n = Number(id);
+    const found = local.find((a) => a.id === n || String(a.id) === String(id));
+    if (!found) return { success: false, status: 404, error: 'Alerta não encontrado.' };
+    return { success: true, data: mapDtoToOccurrence(found) } as ApiResponse<any>;
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Falha ao carregar alerta.' };
+  }
 }
 
 export async function getAlertByIdRaw(id: number | string): Promise<ApiResponse<AlertaAmbientalDto>> {
-  const res = await getJson<AlertaAmbientalDto>(`AlertasAmbientais/${id}`);
-  if (!res.success) return { success: false, error: res.error, status: res.status };
-  return res;
+  try {
+    const res = await getJson<AlertaAmbientalDto>(`AlertasAmbientais/${id}`);
+    if (res.success && res.data) return res;
+  } catch (e) {
+    // ignore
+  }
+
+  try {
+    const local = await loadLocalAlerts();
+    const n = Number(id);
+    const found = local.find((a) => a.id === n || String(a.id) === String(id));
+    if (!found) return { success: false, status: 404, error: 'Alerta não encontrado.' };
+    return { success: true, data: found } as ApiResponse<any>;
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Falha ao carregar alerta.' };
+  }
 }
 
 export async function getPendentes(): Promise<ApiResponse<Occurrence[]>> {
-  const res = await getJson<AlertaAmbientalDto[]>('AlertasAmbientais/pendentes');
-  if (!res.success) return { success: true, data: SAMPLE_FALLBACK } as ApiResponse<any>;
-  return { success: true, data: res.data!.map(mapDtoToOccurrence) } as ApiResponse<any>;
+  try {
+    const res = await getJson<AlertaAmbientalDto[]>('AlertasAmbientais/pendentes');
+    if (res.success && res.data) return { success: true, data: res.data.map(mapDtoToOccurrence) } as ApiResponse<any>;
+  } catch (e) {
+    // ignore fallback to local
+  }
+
+  try {
+    const local = await loadLocalAlerts();
+    const pendentes = local.filter((a) => !a.resolvido).map(mapDtoToOccurrence);
+    return { success: true, data: pendentes } as ApiResponse<any>;
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Falha ao carregar alertas pendentes.' };
+  }
 }
 
 export async function createAlert(payload: any): Promise<ApiResponse<Occurrence>> {
-  const res = await postJson<AlertaAmbientalDto>('AlertasAmbientais', payload);
-  if (!res.success) return { success: false, error: res.error, status: res.status };
-  return { success: true, data: mapDtoToOccurrence(res.data) } as ApiResponse<any>;
+  try {
+    const res = await postJson<AlertaAmbientalDto>('AlertasAmbientais', payload);
+    if (res.success && res.data) return { success: true, data: mapDtoToOccurrence(res.data) } as ApiResponse<any>;
+  } catch (e) {
+    // fallback to local
+  }
+
+  try {
+    const local = await loadLocalAlerts();
+    const lastRaw = await AsyncStorage.getItem(LAST_ID_KEY);
+    const last = lastRaw ? Number(lastRaw) : (local.length ? Math.max(...local.map((r) => r.id)) : 0);
+    const id = last + 1;
+    const now = new Date().toISOString();
+
+    const dto: AlertaAmbientalDto = {
+      id,
+      regiaoMonitoradaId: Number(payload.regiaoMonitoradaId ?? payload.RegiaoMonitoradaId ?? payload.regionId ?? 0),
+      analiseAmbientalId: payload.analiseAmbientalId != null ? Number(payload.analiseAmbientalId) : payload.AnaliseAmbientalId ?? null,
+      tipoAlerta: payload.tipoAlerta ?? payload.TipoAlerta ?? 'Monitoramento',
+      nivelRisco: payload.nivelRisco ?? payload.NivelRisco ?? 'Baixo',
+      mensagem: payload.mensagem ?? payload.Mensagem ?? payload.description ?? null,
+      resolvido: !!payload.resolvido,
+      dataCriacao: now,
+      dataResolucao: null,
+    };
+
+    local.push(dto);
+    await saveLocalAlerts(local);
+    await AsyncStorage.setItem(LAST_ID_KEY, String(id));
+
+    return { success: true, data: mapDtoToOccurrence(dto) } as ApiResponse<any>;
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Falha ao criar alerta.' };
+  }
 }
 
 export async function updateAlert(id: number | string, payload: any): Promise<ApiResponse<Occurrence>> {
-  const res = await putJson<AlertaAmbientalDto>(`AlertasAmbientais/${id}`, payload);
-  if (!res.success) return { success: false, error: res.error, status: res.status };
-  return { success: true, data: mapDtoToOccurrence(res.data) } as ApiResponse<any>;
+  try {
+    const res = await putJson<AlertaAmbientalDto>(`AlertasAmbientais/${id}`, payload);
+    if (res.success && res.data) return { success: true, data: mapDtoToOccurrence(res.data) } as ApiResponse<any>;
+  } catch (e) {
+    // fallback
+  }
+
+  try {
+    const local = await loadLocalAlerts();
+    const n = Number(id);
+    const idx = local.findIndex((a) => a.id === n || String(a.id) === String(id));
+    if (idx === -1) return { success: false, status: 404, error: 'Alerta não encontrado.' };
+
+    const current = local[idx];
+    const updated: AlertaAmbientalDto = {
+      ...current,
+      tipoAlerta: payload.tipoAlerta ?? payload.TipoAlerta ?? current.tipoAlerta,
+      nivelRisco: payload.nivelRisco ?? payload.NivelRisco ?? current.nivelRisco,
+      mensagem: payload.mensagem ?? payload.Mensagem ?? current.mensagem,
+      resolvido: payload.resolvido != null ? Boolean(payload.resolvido) : current.resolvido,
+      dataResolucao: payload.resolvido ? current.dataResolucao ?? new Date().toISOString() : current.dataResolucao,
+    };
+
+    local[idx] = updated;
+    await saveLocalAlerts(local);
+    return { success: true, data: mapDtoToOccurrence(updated) } as ApiResponse<any>;
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Falha ao atualizar alerta.' };
+  }
 }
 
 export async function resolveAlert(id: number | string): Promise<ApiResponse<Occurrence>> {
-  const res = await putJson<AlertaAmbientalDto>(`AlertasAmbientais/${id}/resolver`, null);
-  if (!res.success) return { success: false, error: res.error, status: res.status };
-  return { success: true, data: mapDtoToOccurrence(res.data) } as ApiResponse<any>;
+  try {
+    const res = await putJson<AlertaAmbientalDto>(`AlertasAmbientais/${id}/resolver`, null);
+    if (res.success && res.data) return { success: true, data: mapDtoToOccurrence(res.data) } as ApiResponse<any>;
+  } catch (e) {
+    // fallback
+  }
+
+  try {
+    const local = await loadLocalAlerts();
+    const n = Number(id);
+    const idx = local.findIndex((a) => a.id === n || String(a.id) === String(id));
+    if (idx === -1) return { success: false, status: 404, error: 'Alerta não encontrado.' };
+    local[idx].resolvido = true;
+    local[idx].dataResolucao = new Date().toISOString();
+    await saveLocalAlerts(local);
+    return { success: true, data: mapDtoToOccurrence(local[idx]) } as ApiResponse<any>;
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Falha ao resolver alerta.' };
+  }
 }
 
 export async function deleteAlert(id: number | string): Promise<ApiResponse<null>> {
-  const res = await deleteJson<null>(`AlertasAmbientais/${id}`);
-  if (!res.success) return { success: false, error: res.error, status: res.status };
-  return { success: true, data: null };
+  try {
+    const res = await deleteJson<null>(`AlertasAmbientais/${id}`);
+    if (res.success) return { success: true, data: null };
+  } catch (e) {
+    // ignore
+  }
+
+  try {
+    const local = await loadLocalAlerts();
+    const n = Number(id);
+    const idx = local.findIndex((a) => a.id === n || String(a.id) === String(id));
+    if (idx === -1) return { success: false, status: 404, error: 'Alerta não encontrado.' };
+    local.splice(idx, 1);
+    await saveLocalAlerts(local);
+    return { success: true, data: null };
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Falha ao excluir alerta.' };
+  }
 }
