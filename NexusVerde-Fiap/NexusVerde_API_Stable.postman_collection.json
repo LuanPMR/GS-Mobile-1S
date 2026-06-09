@@ -1,0 +1,594 @@
+﻿{
+  "info": {
+    "_postman_id": "nexus-verde-api-v1",
+    "name": "Nexus Verde — API de Monitoramento Ambiental",
+    "description": "Collection de testes para a API Nexus Verde de monitoramento ambiental com dados satelitais",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    
+    {
+      "name": "2. GET RegioesMonitoradas (Empty)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is array', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(Array.isArray(jsonData)).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5170/api/RegioesMonitoradas",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+          "path": ["api", "RegioesMonitoradas"]
+        }
+      }
+    },
+    {
+      "name": "3. GET ImagensSatelitais (Empty)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is array', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(Array.isArray(jsonData)).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5170/api/ImagensSatelitais",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+          "path": ["api", "ImagensSatelitais"]
+        }
+      }
+    },
+    {
+      "name": "4. CREATE RegiaoMonitorada",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Response has region data', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData).to.have.property('nome');",
+              "});",
+              "",
+              "pm.test('Save region ID for later use', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set('regionId', jsonData.id);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+            "raw": "{\\n  \\\"nome\\\": \\\"Reserva Florestal A\\\",\\n  \\\"bioma\\\": \\\"Amazonia\\\",\\n  \\\"estado\\\": \\\"RR\\\",\\n  \\\"pais\\\": \\\"Brasil\\\",\\n  \\\"latitude\\\": -2.5,\\n  \\\"longitude\\\": -60.5,\\n  \\\"areaKm2\\\": 1500.0\\n}"
+        },
+        "url": {
+              "raw": "http://localhost:5170/api/RegioesMonitoradas",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+              "path": ["api", "RegioesMonitoradas"]
+        }
+      }
+    },
+    {
+      "name": "5. CREATE ImagemSatelital",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Response has image data', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData).to.have.property('urlImagem');",
+              "});",
+              "",
+              "pm.test('Save image ID for later use', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set('imageId', jsonData.id);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+            "raw": "{\\n  \\\"regiaoMonitoradaId\\\": {{regionId}},\\n  \\\"fonteSatelitalId\\\": 1,\\n  \\\"dataCaptura\\\": \\\"2024-06-01T00:00:00Z\\\",\\n  \\\"urlImagem\\\": \\\"https://example.com/sentinel2/image_20240601.tif\\\",\\n  \\\"percentualNuvem\\\": 10.0,\\n  \\\"processada\\\": false\\n}"
+        },
+        "url": {
+              "raw": "http://localhost:5170/api/ImagensSatelitais",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+              "path": ["api", "ImagensSatelitais"]
+        }
+      }
+    },
+    {
+      "name": "6. GET ImagemSatelital by ID",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has pet data', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData.nome).to.eql('Rex');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5170/api/ImagensSatelitais/{{imageId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+          "path": ["api", "ImagensSatelitais", "{{imageId}}"]
+        }
+      }
+    },
+    {
+      "name": "7. GET Pet com ID Inexistente (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 404 NotFound', function () {",
+              "    pm.response.to.have.status(404);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5170/api/pets/1588",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+          "path": ["api", "pets", "1588"]
+        }
+      }
+    },
+    {
+      "name": "8. CREATE Vacina",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Response has vacina data', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData).to.have.property('nome');",
+              "});",
+              "",
+              "pm.test('Save vacina ID for later use', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set('vacinaId', jsonData.id);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\\n  \\\"nome\\\": \\\"V10\\\",\\n  \\\"dataAplicacao\\\": \\\"2024-05-20\\\",\\n  \\\"proximaDose\\\": \\\"2025-05-20\\\",\\n  \\\"lote\\\": \\\"LOT001\\\",\\n  \\\"petId\\\": {{petId}}\\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5170/api/vacinas",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+          "path": ["api", "vacinas"]
+        }
+      }
+    },
+    {
+      "name": "9. GET Vacinas",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is array', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(Array.isArray(jsonData)).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5170/api/vacinas",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+          "path": ["api", "vacinas"]
+        }
+      }
+    },
+    {
+      "name": "10. GET Vacinas Atrasadas",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is array', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(Array.isArray(jsonData)).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5170/api/vacinas/atrasadas",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+          "path": ["api", "vacinas", "atrasadas"]
+        }
+      }
+    },
+    {
+      "name": "11. GET Vacinas por Pet",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is array', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(Array.isArray(jsonData)).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5170/api/vacinas/pet/{{petId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+          "path": ["api", "vacinas", "pet", "{{petId}}"]
+        }
+      }
+    },
+    {
+      "name": "12. GET Alertas",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is array', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(Array.isArray(jsonData)).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5170/api/alertas",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+          "path": ["api", "alertas"]
+        }
+      }
+    },
+    {
+      "name": "13. GET Health Alerts",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is array', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(Array.isArray(jsonData)).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5170/api/alertas/health-alerts/{{petId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+          "path": ["api", "alertas", "health-alerts", "{{petId}}"]
+        }
+      }
+    },
+    {
+      "name": "14. UPDATE Tutor",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 204 NoContent', function () {",
+              "    pm.response.to.have.status(204);",
+              "});",
+              "",
+              "pm.test('Response body is empty for 204', function () {",
+              "    pm.expect(pm.response.text()).to.equal('');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\\n  \\\"nome\\\": \\\"João Silva Atualizado\\\"\\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5170/api/tutors/{{tutorId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+          "path": ["api", "tutors", "{{tutorId}}"]
+        }
+      }
+    },
+    {
+      "name": "15. UPDATE Pet",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 204 NoContent', function () {",
+              "    pm.response.to.have.status(204);",
+              "});",
+              "",
+              "pm.test('Response body is empty for 204', function () {",
+              "    pm.expect(pm.response.text()).to.equal('');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\\n  \\\"peso\\\": 29.5\\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5170/api/pets/{{petId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+          "path": ["api", "pets", "{{petId}}"]
+        }
+      }
+    },
+    {
+      "name": "16. PUT com ID Inexistente (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 404 NotFound', function () {",
+              "    pm.response.to.have.status(404);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\\n  \\\"nome\\\": \\\"Teste\\\"\\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5170/api/tutors/1588",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+          "path": ["api", "tutors", "1588"]
+        }
+      }
+    },
+    {
+      "name": "17. DELETE Vacina",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 204 NoContent', function () {",
+              "    pm.response.to.have.status(204);",
+              "});",
+              "",
+              "pm.test('Response body is empty for 204', function () {",
+              "    pm.expect(pm.response.text()).to.equal('');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5170/api/vacinas/{{vacinaId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+          "path": ["api", "vacinas", "{{vacinaId}}"]
+        }
+      }
+    },
+    {
+      "name": "18. DELETE com ID Inexistente (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 404 NotFound', function () {",
+              "    pm.response.to.have.status(404);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5170/api/vacinas/1588",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5170",
+          "path": ["api", "vacinas", "1588"]
+        }
+      }
+    }
+  ]
+}
+

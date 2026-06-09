@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RootNamespace>NexusVerde.WebAPI</RootNamespace>
+        <!-- UserSecretsId allows secure local storage of sensitive settings (connection strings) during development -->
+        <UserSecretsId>NexusVerde.WebAPI-UserSecrets</UserSecretsId>
+        <!-- Generate XML docs for Swagger if desired -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <DocumentationFile>$(OutputPath)NexusVerde.WebAPI.xml</DocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\NexusVerde.Domain\NexusVerde.Domain.csproj" />
+        <ProjectReference Include="..\NexusVerde.Application\NexusVerde.Application.csproj" />
+        <ProjectReference Include="..\NexusVerde.Infrastructure\NexusVerde.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <!-- Controllers and other source files are included implicitly from this project folder. Removed legacy linked Compile include that referenced the old '..\veterinaria.WebAPI' folder. -->
+
+    <ItemGroup>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+        <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.10">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+</Project>
