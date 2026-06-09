@@ -9,6 +9,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { getSources } from '@/services/satelliteSourceService';
 
 type Satellite = { id: number; name: string; region: string };
 
@@ -32,13 +33,40 @@ export default function MonitoringScreen() {
   const tickMs = 500; // progress tick
   const theme = useTheme();
   const mountedRef = useRef(true);
+  const [sources, setSources] = useState<Satellite[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     mountedRef.current = true;
-    const t = setTimeout(() => setLoading(false), 700);
+
+    let cancelled = false;
+
+    async function loadSources() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await getSources();
+        if (cancelled) return;
+        if (res.success && res.data && res.data.length > 0) {
+          const mapped = res.data.map<Satellite>((s) => ({ id: s.id, name: s.nome ?? s.Nome, region: s.provedor ?? s.tipo ?? '—' }));
+          setSources(mapped);
+        } else {
+          // keep fallback
+          setSources(null);
+        }
+      } catch (err: any) {
+        setError(err?.message || 'Erro ao carregar fontes satelitais');
+        setSources(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadSources();
+
     return () => {
+      cancelled = true;
       mountedRef.current = false;
-      clearTimeout(t);
     };
   }, []);
 
@@ -67,15 +95,20 @@ export default function MonitoringScreen() {
 
         {loading ? (
           <Loading />
+        ) : error ? (
+          <>
+            <ThemedText type="small" themeColor="danger">{error}</ThemedText>
+            <Button title="Tentar novamente" onPress={() => { setError(null); setLoading(true); (async () => { const r = await getSources(); if (r.success && r.data) setSources(r.data.map((s) => ({ id: s.id, name: s.nome ?? s.Nome, region: s.provedor ?? s.tipo ?? '—' }))); else setSources(null); setLoading(false); })(); }} style={{ marginTop: Spacing.two }} />
+          </>
         ) : (
           <>
             <Card style={styles.currentCard}>
               <ThemedText type="smallBold">Satélite ativo</ThemedText>
-              <ThemedText type="subtitle" style={styles.currentName}>{SATELLITES[active].name}</ThemedText>
+              <ThemedText type="subtitle" style={styles.currentName}>{(sources ?? SATELLITES)[active]?.name ?? SATELLITES[active].name}</ThemedText>
 
               <View style={styles.metaRow}>
-                <ThemedText type="small">Região</ThemedText>
-                <ThemedText type="smallBold">{SATELLITES[active].region}</ThemedText>
+                <ThemedText type="small">Região / Fonte</ThemedText>
+                <ThemedText type="smallBold">{(sources ?? SATELLITES)[active]?.region ?? SATELLITES[active].region}</ThemedText>
               </View>
 
               <View style={styles.metaRow}>
@@ -92,7 +125,7 @@ export default function MonitoringScreen() {
 
               <View style={styles.metaRow}>
                 <ThemedText type="small">Próximo satélite</ThemedText>
-                <ThemedText type="smallBold">{SATELLITES[(active + 1) % SATELLITES.length].name}</ThemedText>
+                <ThemedText type="smallBold">{(sources ?? SATELLITES)[(active + 1) % (sources ?? SATELLITES).length]?.name ?? SATELLITES[(active + 1) % SATELLITES.length].name}</ThemedText>
               </View>
 
               <View style={styles.aiRow}>
@@ -103,11 +136,11 @@ export default function MonitoringScreen() {
 
             <ThemedText type="subtitle">Fila de satélites</ThemedText>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.timeline} contentContainerStyle={styles.timelineContent}>
-              {SATELLITES.map((s, i) => (
+              {(sources ?? SATELLITES).map((s, i) => (
                 <Card key={s.id} style={[styles.timelineItem, active === i && { borderColor: theme.primary, borderWidth: 2 }]}>
                   <ThemedText type="smallBold">{s.name}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">{s.region}</ThemedText>
-                  <ThemedText type="small" themeColor={active === i ? 'primary' : 'textSecondary'}>{active === i ? 'Ativo' : i === (active + 1) % SATELLITES.length ? 'Próximo' : 'Aguardando'}</ThemedText>
+                  <ThemedText type="small" themeColor={active === i ? 'primary' : 'textSecondary'}>{active === i ? 'Ativo' : i === (active + 1) % (sources ?? SATELLITES).length ? 'Próximo' : 'Aguardando'}</ThemedText>
                 </Card>
               ))}
             </ScrollView>

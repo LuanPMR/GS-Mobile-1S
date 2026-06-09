@@ -1,7 +1,7 @@
 import { ApiResponse, deleteJson, getJson, postJson, putJson } from './apiClient';
 
 // Backend DTO shape (partial)
-type AlertaAmbientalDto = {
+export type AlertaAmbientalDto = {
   id: number;
   regiaoMonitoradaId: number;
   analiseAmbientalId?: number | null;
@@ -72,10 +72,23 @@ export async function getAlerts(): Promise<ApiResponse<AlertaAmbientalDto[] | Oc
   return { success: true, data: res.data!.map(mapDtoToOccurrence) } as ApiResponse<any>;
 }
 
+// Raw DTO access when UI needs original fields
+export async function getAlertsRaw(): Promise<ApiResponse<AlertaAmbientalDto[]>> {
+  const res = await getJson<AlertaAmbientalDto[]>('AlertasAmbientais');
+  if (!res.success) return { success: false, error: res.error, status: res.status };
+  return res;
+}
+
 export async function getAlertById(id: number | string): Promise<ApiResponse<Occurrence>> {
   const res = await getJson<AlertaAmbientalDto>(`AlertasAmbientais/${id}`);
   if (!res.success) return { success: false, error: res.error, status: res.status };
   return { success: true, data: mapDtoToOccurrence(res.data) } as ApiResponse<any>;
+}
+
+export async function getAlertByIdRaw(id: number | string): Promise<ApiResponse<AlertaAmbientalDto>> {
+  const res = await getJson<AlertaAmbientalDto>(`AlertasAmbientais/${id}`);
+  if (!res.success) return { success: false, error: res.error, status: res.status };
+  return res;
 }
 
 export async function getPendentes(): Promise<ApiResponse<Occurrence[]>> {

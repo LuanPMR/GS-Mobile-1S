@@ -1,0 +1,11 @@
+C:\Projetos\Veterinaria Fiap\NexusVerde.Domain\obj\Debug\net10.0\NexusVerde.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Projetos\Veterinaria Fiap\NexusVerde.Domain\obj\Debug\net10.0\NexusVerde.Domain.AssemblyInfoInputs.cache
+C:\Projetos\Veterinaria Fiap\NexusVerde.Domain\obj\Debug\net10.0\NexusVerde.Domain.AssemblyInfo.cs
+C:\Projetos\Veterinaria Fiap\NexusVerde.Domain\obj\Debug\net10.0\NexusVerde.Domain.csproj.CoreCompileInputs.cache
+C:\Projetos\Veterinaria Fiap\NexusVerde.Domain\bin\Debug\net10.0\NexusVerde.Domain.deps.json
+C:\Projetos\Veterinaria Fiap\NexusVerde.Domain\bin\Debug\net10.0\NexusVerde.Domain.dll
+C:\Projetos\Veterinaria Fiap\NexusVerde.Domain\bin\Debug\net10.0\NexusVerde.Domain.pdb
+C:\Projetos\Veterinaria Fiap\NexusVerde.Domain\obj\Debug\net10.0\NexusVerde.Domain.dll
+C:\Projetos\Veterinaria Fiap\NexusVerde.Domain\obj\Debug\net10.0\refint\NexusVerde.Domain.dll
+C:\Projetos\Veterinaria Fiap\NexusVerde.Domain\obj\Debug\net10.0\NexusVerde.Domain.pdb
+C:\Projetos\Veterinaria Fiap\NexusVerde.Domain\obj\Debug\net10.0\ref\NexusVerde.Domain.dll

@@ -2,24 +2,27 @@ import { useRouter, useSearchParams } from 'expo-router';
 import React from 'react';
 import { Alert, FlatList, Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
 
+import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Header } from '@/components/header';
 import { Loading } from '@/components/loading';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { deleteOccurrence, getOccurrences, Occurrence } from '@/services/api';
+import { deleteAlert, getAlertsRaw } from '@/services/alertService';
 
-const SAMPLE_FALLBACK: Occurrence[] = [
-  {
-    id: 'f1',
-    regionName: 'Amazônia',
-    satelliteCode: 'MS-01',
-    status: 'QUEIMADA',
-    vegetationColor: 'PRETO',
-    description: 'Fumaça detectada por algoritmo de IA.',
-    detectedAt: new Date().toISOString(),
-  },
+type AlertDisplay = {
+  id: number | string;
+  tipoAlerta: string;
+  nivelRisco: string;
+  mensagem?: string | null;
+  resolvido: boolean;
+  dataCriacao?: string | null;
+  regiaoMonitoradaId?: number | null;
+};
+
+const SAMPLE_FALLBACK: AlertDisplay[] = [
+  { id: 'f1', tipoAlerta: 'Queimada', nivelRisco: 'Alto', mensagem: 'Fumaça detectada (fallback)', resolvido: false, dataCriacao: new Date().toISOString() },
 ];
 
 export default function AlertsScreen() {
@@ -28,43 +31,49 @@ export default function AlertsScreen() {
   const region = (params.region as string) || '';
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [data, setData] = React.useState<Occurrence[] | null>(null);
+  const [data, setData] = React.useState<AlertDisplay[] | null>(null);
   const [deletingId, setDeletingId] = React.useState<string | number | null>(null);
   const refresh = params.refresh as string | undefined;
 
-  React.useEffect(() => {
-    let mounted = true;
-
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await getOccurrences();
-        if (!mounted) return;
-        if (res.success && res.data) {
-          setData(res.data);
-        } else {
-          setError(res.error || 'Erro desconhecido ao buscar ocorrências.');
-          setData(SAMPLE_FALLBACK);
-        }
-      } catch (err: any) {
-        if (!mounted) return;
-        setError(err?.message || 'Erro desconhecido');
+  const loadAlerts = React.useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getAlertsRaw();
+      if (res.success && res.data) {
+        const mapped = res.data.map((d) => ({
+          id: d.id ?? d.Id,
+          tipoAlerta: String(d.tipoAlerta ?? d.TipoAlerta ?? d.tipoAlerta),
+          nivelRisco: String(d.nivelRisco ?? d.NivelRisco ?? d.nivelRisco),
+          mensagem: d.mensagem ?? d.Mensagem ?? null,
+          resolvido: !!d.resolvido,
+          dataCriacao: d.dataCriacao ?? d.DataCriacao ?? null,
+          regiaoMonitoradaId: d.regiaoMonitoradaId ?? d.RegiaoMonitoradaId ?? null,
+        } as AlertDisplay));
+        setData(mapped);
+      } else {
+        setError(res.error || 'Erro desconhecido ao buscar alertas.');
         setData(SAMPLE_FALLBACK);
-      } finally {
-        if (mounted) setLoading(false);
       }
+    } catch (err: any) {
+      setError(err?.message || 'Erro desconhecido');
+      setData(SAMPLE_FALLBACK);
+    } finally {
+      setLoading(false);
     }
-
-    load();
-    return () => {
-      mounted = false;
-    };
   }, [region, refresh]);
+
+  React.useEffect(() => {
+    loadAlerts();
+  }, [loadAlerts]);
 
   const occurrences = (data ?? []).filter((o) => {
     if (!region) return true;
-    return o.regionName?.toLowerCase().includes(region.toLowerCase());
+    // try numeric region id match first
+    const regionNum = Number(region);
+    if (!isNaN(regionNum) && o.regiaoMonitoradaId != null) return Number(o.regiaoMonitoradaId) === regionNum;
+    // otherwise try substring match in tipoAlerta or mensagem
+    return (o.tipoAlerta ?? '').toString().toLowerCase().includes(region.toLowerCase()) || (o.mensagem ?? '').toString().toLowerCase().includes(region.toLowerCase());
   });
 
   return (
@@ -75,7 +84,10 @@ export default function AlertsScreen() {
         {loading ? (
           <Loading />
         ) : error ? (
-          <ThemedText type="small" themeColor="danger">{error}</ThemedText>
+          <>
+            <ThemedText type="small" themeColor="danger">{error}</ThemedText>
+            <Button title="Tentar novamente" onPress={() => loadAlerts()} style={{ marginTop: Spacing.two }} />
+          </>
         ) : occurrences.length === 0 ? (
           <ThemedText type="small">Nenhuma ocorrência encontrada.</ThemedText>
         ) : (
@@ -86,17 +98,16 @@ export default function AlertsScreen() {
               <Card>
                 <View style={styles.row}>
                   <View style={{ flex: 1 }}>
-                    <ThemedText type="smallBold">{item.status}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">{item.regionName} • {item.satelliteCode}</ThemedText>
-                    {item.description ? <ThemedText type="small">{item.description}</ThemedText> : null}
+                    <ThemedText type="smallBold">{item.tipoAlerta}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">{item.nivelRisco}</ThemedText>
+                    {item.mensagem ? <ThemedText type="small">{item.mensagem}</ThemedText> : null}
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
-                    <ThemedText
-                      type="small"
-                      themeColor={item.status === 'QUEIMADA' || item.status === 'DESMATAMENTO' ? 'danger' : item.status === 'RISCO' ? 'warning' : 'success'}
-                    >
-                      {item.status}
+                    <ThemedText type="small" themeColor={item.resolvido ? 'success' : 'warning'}>
+                      {item.resolvido ? 'Resolvido' : 'Pendente'}
                     </ThemedText>
+
+                    <ThemedText type="caption">{item.dataCriacao ? new Date(item.dataCriacao).toLocaleString() : ''}</ThemedText>
 
                     <View style={styles.cardActions}>
                       <Pressable onPress={() => router.push(`/report?id=${item.id}`)} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}>
@@ -112,7 +123,7 @@ export default function AlertsScreen() {
                               style: 'destructive',
                               onPress: async () => {
                                 setDeletingId(item.id);
-                                const res = await deleteOccurrence(item.id);
+                                const res = await deleteAlert(item.id as any);
                                 setDeletingId(null);
                                 if (res.success) {
                                   Alert.alert('Sucesso', 'Ocorrência excluída.');
@@ -145,4 +156,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1, paddingHorizontal: Spacing.four, maxWidth: MaxContentWidth },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.four },
+  cardActions: { flexDirection: 'row', marginTop: Spacing.two },
+  actionButton: { paddingHorizontal: Spacing.two, paddingVertical: Spacing.one },
+  pressed: { opacity: 0.7 },
 });

@@ -1,0 +1,75 @@
+{
+  "version": 2,
+  "dgSpecHash": "yAb1welnIgc=",
+  "success": true,
+  "projectFilePath": "C:\\Projetos\\NexusVerde-Fiap\\NexusVerde.Application\\NexusVerde.Application.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\helll\\.nuget\\packages\\automapper\\12.0.1\\automapper.12.0.1.nupkg.sha512",
+    "C:\\Users\\helll\\.nuget\\packages\\microsoft.aspnetcore.http.abstractions\\2.3.10\\microsoft.aspnetcore.http.abstractions.2.3.10.nupkg.sha512",
+    "C:\\Users\\helll\\.nuget\\packages\\microsoft.aspnetcore.http.features\\2.3.9\\microsoft.aspnetcore.http.features.2.3.9.nupkg.sha512",
+    "C:\\Users\\helll\\.nuget\\packages\\microsoft.extensions.primitives\\8.0.0\\microsoft.extensions.primitives.8.0.0.nupkg.sha512",
+    "C:\\Users\\helll\\.nuget\\packages\\sixlabors.imagesharp\\3.1.4\\sixlabors.imagesharp.3.1.4.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "message": "Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x",
+      "projectPath": "C:\\Projetos\\NexusVerde-Fiap\\NexusVerde.Application\\NexusVerde.Application.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Projetos\\NexusVerde-Fiap\\NexusVerde.Application\\NexusVerde.Application.csproj",
+      "libraryId": "AutoMapper",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "message": "Package 'SixLabors.ImageSharp' 3.1.4 has a known high severity vulnerability, https://github.com/advisories/GHSA-2cmq-823j-5qj8",
+      "projectPath": "C:\\Projetos\\NexusVerde-Fiap\\NexusVerde.Application\\NexusVerde.Application.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Projetos\\NexusVerde-Fiap\\NexusVerde.Application\\NexusVerde.Application.csproj",
+      "libraryId": "SixLabors.ImageSharp",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "message": "Package 'SixLabors.ImageSharp' 3.1.4 has a known high severity vulnerability, https://github.com/advisories/GHSA-63p8-c4ww-9cg7",
+      "projectPath": "C:\\Projetos\\NexusVerde-Fiap\\NexusVerde.Application\\NexusVerde.Application.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Projetos\\NexusVerde-Fiap\\NexusVerde.Application\\NexusVerde.Application.csproj",
+      "libraryId": "SixLabors.ImageSharp",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "message": "Package 'SixLabors.ImageSharp' 3.1.4 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-qxrv-gp6x-rc23",
+      "projectPath": "C:\\Projetos\\NexusVerde-Fiap\\NexusVerde.Application\\NexusVerde.Application.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Projetos\\NexusVerde-Fiap\\NexusVerde.Application\\NexusVerde.Application.csproj",
+      "libraryId": "SixLabors.ImageSharp",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "message": "Package 'SixLabors.ImageSharp' 3.1.4 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-rxmq-m78w-7wmc",
+      "projectPath": "C:\\Projetos\\NexusVerde-Fiap\\NexusVerde.Application\\NexusVerde.Application.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Projetos\\NexusVerde-Fiap\\NexusVerde.Application\\NexusVerde.Application.csproj",
+      "libraryId": "SixLabors.ImageSharp",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
+}
