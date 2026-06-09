@@ -8,26 +8,61 @@ import { Loading } from '@/components/loading';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { getOccurrences, Occurrence } from '@/services/api';
 
-type AlertItem = { id: string; region: string; title: string; severity: 'low' | 'medium' | 'high' };
-
-const SAMPLE_ALERTS: AlertItem[] = [
-  { id: 'a1', region: 'amazonia', title: 'Fumaça detectada', severity: 'medium' },
-  { id: 'a2', region: 'cerrado', title: 'Queimada detectada', severity: 'high' },
-  { id: 'a3', region: 'pantanal', title: 'Aumento de temperatura', severity: 'low' },
+const SAMPLE_FALLBACK: Occurrence[] = [
+  {
+    id: 'f1',
+    regionName: 'Amazônia',
+    satelliteCode: 'MS-01',
+    status: 'QUEIMADA',
+    vegetationColor: 'PRETO',
+    description: 'Fumaça detectada por algoritmo de IA.',
+    detectedAt: new Date().toISOString(),
+  },
 ];
 
 export default function AlertsScreen() {
   const params = useSearchParams();
   const region = (params.region as string) || '';
   const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [data, setData] = React.useState<Occurrence[] | null>(null);
 
   React.useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(t);
-  }, []);
+    let mounted = true;
 
-  const alerts = region ? SAMPLE_ALERTS.filter((a) => a.region === region) : SAMPLE_ALERTS;
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await getOccurrences();
+        if (!mounted) return;
+        if (res.success && res.data) {
+          setData(res.data);
+        } else {
+          setError(res.error || 'Erro desconhecido ao buscar ocorrências.');
+          setData(SAMPLE_FALLBACK);
+        }
+      } catch (err: any) {
+        if (!mounted) return;
+        setError(err?.message || 'Erro desconhecido');
+        setData(SAMPLE_FALLBACK);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [region]);
+
+  const occurrences = (data ?? []).filter((o) => {
+    if (!region) return true;
+    return o.regionName?.toLowerCase().includes(region.toLowerCase());
+  });
 
   return (
     <ThemedView style={styles.container}>
@@ -36,21 +71,27 @@ export default function AlertsScreen() {
 
         {loading ? (
           <Loading />
-        ) : alerts.length === 0 ? (
-          <ThemedText type="small">Nenhum alerta recente.</ThemedText>
+        ) : error ? (
+          <ThemedText type="small" themeColor="danger">{error}</ThemedText>
+        ) : occurrences.length === 0 ? (
+          <ThemedText type="small">Nenhuma ocorrência encontrada.</ThemedText>
         ) : (
           <FlatList
-            data={alerts}
-            keyExtractor={(a) => a.id}
+            data={occurrences}
+            keyExtractor={(a) => String(a.id)}
             renderItem={({ item }) => (
               <Card>
                 <View style={styles.row}>
                   <View style={{ flex: 1 }}>
-                    <ThemedText type="smallBold">{item.title}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">{item.region}</ThemedText>
+                    <ThemedText type="smallBold">{item.status}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">{item.regionName} • {item.satelliteCode}</ThemedText>
+                    {item.description ? <ThemedText type="small">{item.description}</ThemedText> : null}
                   </View>
-                  <ThemedText type="small" themeColor={item.severity === 'high' ? 'danger' : item.severity === 'medium' ? 'warning' : 'success'}>
-                    {item.severity.toUpperCase()}
+                  <ThemedText
+                    type="small"
+                    themeColor={item.status === 'QUEIMADA' || item.status === 'DESMATAMENTO' ? 'danger' : item.status === 'RISCO' ? 'warning' : 'success'}
+                  >
+                    {item.status}
                   </ThemedText>
                 </View>
               </Card>

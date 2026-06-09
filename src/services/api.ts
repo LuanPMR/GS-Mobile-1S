@@ -62,14 +62,18 @@ function friendlyNetworkError(err: unknown) {
   return { success: false, error: 'Não foi possível conectar ao servidor. Verifique a URL da API e sua conexão.' };
 }
 
-const base = API_BASE_URL.replace(/\/+$/, '');
+function getBase() {
+  const env = (process.env as any).EXPO_PUBLIC_API_URL;
+  const raw = env ?? API_BASE_URL;
+  return String(raw).replace(/\/+$/, '');
+}
 
 /**
  * GET /occurrences
  */
 export async function getOccurrences(): Promise<ApiResponse<Occurrence[]>> {
   try {
-    const res = await fetch(`${base}/occurrences`, { headers: { Accept: 'application/json' } });
+    const res = await fetch(`${getBase()}/occurrences`, { headers: { Accept: 'application/json' } });
     return await handleResponse<Occurrence[]>(res);
   } catch (err) {
     return friendlyNetworkError(err) as ApiResponse<Occurrence[]>;
@@ -81,7 +85,7 @@ export async function getOccurrences(): Promise<ApiResponse<Occurrence[]>> {
  */
 export async function getOccurrenceById(id: string | number): Promise<ApiResponse<Occurrence>> {
   try {
-    const res = await fetch(`${base}/occurrences/${id}`, { headers: { Accept: 'application/json' } });
+    const res = await fetch(`${getBase()}/occurrences/${id}`, { headers: { Accept: 'application/json' } });
     return await handleResponse<Occurrence>(res);
   } catch (err) {
     return friendlyNetworkError(err) as ApiResponse<Occurrence>;
@@ -93,7 +97,7 @@ export async function getOccurrenceById(id: string | number): Promise<ApiRespons
  */
 export async function createOccurrence(data: Omit<Occurrence, 'id'>): Promise<ApiResponse<Occurrence>> {
   try {
-    const res = await fetch(`${base}/occurrences`, {
+    const res = await fetch(`${getBase()}/occurrences`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(data),
@@ -109,7 +113,7 @@ export async function createOccurrence(data: Omit<Occurrence, 'id'>): Promise<Ap
  */
 export async function updateOccurrence(id: string | number, data: Partial<Omit<Occurrence, 'id'>>): Promise<ApiResponse<Occurrence>> {
   try {
-    const res = await fetch(`${base}/occurrences/${id}`, {
+    const res = await fetch(`${getBase()}/occurrences/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(data),
@@ -125,7 +129,7 @@ export async function updateOccurrence(id: string | number, data: Partial<Omit<O
  */
 export async function deleteOccurrence(id: string | number): Promise<ApiResponse<null>> {
   try {
-    const res = await fetch(`${base}/occurrences/${id}`, { method: 'DELETE', headers: { Accept: 'application/json' } });
+    const res = await fetch(`${getBase()}/occurrences/${id}`, { method: 'DELETE', headers: { Accept: 'application/json' } });
     return await handleResponse<null>(res);
   } catch (err) {
     return friendlyNetworkError(err) as ApiResponse<null>;
