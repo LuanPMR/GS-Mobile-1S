@@ -126,12 +126,12 @@ export default function RegionsScreen() {
                         </Pressable>
 
                         <Link href={{ pathname: '/alerts', params: { region: String(item.id) } }} asChild>
-                          <Pressable style={[styles.linkButton, { marginLeft: Spacing.two }]}>
+                          <Pressable style={StyleSheet.flatten([styles.linkButton, { marginLeft: Spacing.two }])}>
                             <ThemedText type="linkPrimary">Ver alertas</ThemedText>
                           </Pressable>
                         </Link>
 
-                        <Pressable onPress={() => confirmDelete(item.id, item.nome ?? (item as any).Nome)} style={[styles.linkButton, { marginLeft: Spacing.two }]}>
+                        <Pressable onPress={() => confirmDelete(item.id, item.nome ?? (item as any).Nome)} style={StyleSheet.flatten([styles.linkButton, { marginLeft: Spacing.two }])}>
                           <ThemedText type="link" themeColor="danger">{deletingId === item.id ? 'Excluindo...' : 'Excluir'}</ThemedText>
                         </Pressable>
                       </View>

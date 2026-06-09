@@ -7,9 +7,11 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 
 const TEAM = [
-  { name: 'Ana Silva', role: 'Pesquisadora' },
-  { name: 'Bruno Costa', role: 'Engenheiro de Dados' },
-  { name: 'Carla Souza', role: 'Analista de Imagens' },
+  { name: 'Mathaus Victor Souza Marcelino', role: 'RM: 564146' },
+  { name: 'Luan Peixoto Marins Rocha', role: 'RM: 562258' },
+  { name: 'Carlos Alberto Guedes Neto', role: 'RM: 566022' },
+  { name: 'Filippo Tolone', role: 'RM: 562329' },
+  { name: 'Eduardo Novaes Mollo', role: 'RM: 561515' },
 ];
 
 export default function TeamScreen() {

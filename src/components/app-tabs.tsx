@@ -19,17 +19,33 @@ export default function AppTabs() {
           renderingMode="template"
         />
       </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Sobre</NativeTabs.Trigger.Label>
+      <NativeTabs.Trigger name="monitoring">
+        <NativeTabs.Trigger.Label>Monitoramento</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           src={require('@/assets/images/tabIcons/explore.png')}
           renderingMode="template"
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="monitoring">
-        <NativeTabs.Trigger.Label>Monitoramento</NativeTabs.Trigger.Label>
+      <NativeTabs.Trigger name="alerts">
+        <NativeTabs.Trigger.Label>Alertas</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          src={require('@/assets/images/tabIcons/explore.png')}
+          renderingMode="template"
+        />
+      </NativeTabs.Trigger>
+
+
+      <NativeTabs.Trigger name="regions">
+        <NativeTabs.Trigger.Label>Regiões</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          src={require('@/assets/images/tabIcons/explore.png')}
+          renderingMode="template"
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="team">
+        <NativeTabs.Trigger.Label>Equipe</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           src={require('@/assets/images/tabIcons/explore.png')}
           renderingMode="template"

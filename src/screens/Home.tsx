@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -14,6 +14,7 @@ import { getSources } from '@/services/satelliteSourceService';
 import React from 'react';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [regionsCount, setRegionsCount] = React.useState<number | null>(null);
@@ -60,50 +61,40 @@ export default function HomeScreen() {
           </>
         ) : (
           <View style={styles.grid}>
-            <Link href="/monitoring" asChild>
-              <Pressable>
-                <Card>
-                  <ThemedText type="smallBold">Monitoramento</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">Fontes ativas: {sourcesCount ?? '—'}</ThemedText>
-                </Card>
-              </Pressable>
-            </Link>
+            <Pressable onPress={() => router.push('/monitoring')}>
+              <Card>
+                <ThemedText type="smallBold">Monitoramento</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">Fontes ativas: {sourcesCount ?? '—'}</ThemedText>
+              </Card>
+            </Pressable>
 
-            <Link href="/regions" asChild>
-              <Pressable>
-                <Card>
-                  <ThemedText type="smallBold">Regiões</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">{regionsCount ?? 0} regiões monitoradas</ThemedText>
-                </Card>
-              </Pressable>
-            </Link>
+            <Pressable onPress={() => router.push('/regions')}>
+              <Card>
+                <ThemedText type="smallBold">Regiões</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">{regionsCount ?? 0} regiões monitoradas</ThemedText>
+              </Card>
+            </Pressable>
 
-            <Link href="/alerts" asChild>
-              <Pressable>
-                <Card>
-                  <ThemedText type="smallBold">Alertas</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">Pendentes: {pendingAlertsCount ?? 0}</ThemedText>
-                </Card>
-              </Pressable>
-            </Link>
+            <Pressable onPress={() => router.push('/alerts')}>
+              <Card>
+                <ThemedText type="smallBold">Alertas</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">Pendentes: {pendingAlertsCount ?? 0}</ThemedText>
+              </Card>
+            </Pressable>
 
-            <Link href="/report" asChild>
-              <Pressable>
-                <Card>
-                  <ThemedText type="smallBold">Relatar</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">Criar/editar ocorrência</ThemedText>
-                </Card>
-              </Pressable>
-            </Link>
+            <Pressable onPress={() => router.push('/report')}>
+              <Card>
+                <ThemedText type="smallBold">Relatar</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">Criar/editar ocorrência</ThemedText>
+              </Card>
+            </Pressable>
 
-            <Link href="/team" asChild>
-              <Pressable>
-                <Card>
-                  <ThemedText type="smallBold">Equipe</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">Integrantes do projeto</ThemedText>
-                </Card>
-              </Pressable>
-            </Link>
+            <Pressable onPress={() => router.push('/team')}>
+              <Card>
+                <ThemedText type="smallBold">Equipe</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">Integrantes do projeto</ThemedText>
+              </Card>
+            </Pressable>
           </View>
         )}
       </SafeAreaView>

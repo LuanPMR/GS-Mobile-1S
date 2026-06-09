@@ -13,15 +13,7 @@ export default function ExploreScreen() {
           de regiões monitoradas, alertas ambientais e simulação de análises por satélite.
         </ThemedText>
 
-        <ThemedText type="smallBold" style={{ marginTop: Spacing.four }}>Equipe</ThemedText>
-        <ThemedText type="small">Mathaus Victor Souza Marcelino — RM: 564146</ThemedText>
-        <ThemedText type="small">Luan Peixoto Marins Rocha — RM: 562258</ThemedText>
-        <ThemedText type="small">Carlos Alberto Guedes Neto — RM: 566022</ThemedText>
-        <ThemedText type="small">Filippo Tolone — RM: 562329</ThemedText>
-        <ThemedText type="small">Eduardo Novaes Mollo — RM: 561515</ThemedText>
-
-        <ThemedText type="smallBold" style={{ marginTop: Spacing.four }}>Vídeo demonstrativo</ThemedText>
-        <ThemedText type="small">Link: (placeholder) — atualize com o link do vídeo do projeto.</ThemedText>
+        
       </ThemedView>
     </ScrollView>
   );

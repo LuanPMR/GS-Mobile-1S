@@ -1,4 +1,4 @@
-import { buildApiUrl } from './config';
+import { buildApiUrl, getApiBaseUrl } from './config';
 
 export type ApiResponse<T> = {
   success: boolean;
@@ -17,7 +17,14 @@ async function parseJsonSafe(res: Response) {
 
 export async function safeFetch<T = any>(path: string, init?: RequestInit): Promise<ApiResponse<T>> {
   try {
+    const base = getApiBaseUrl();
     const url = buildApiUrl(path);
+    const method = (init && (init.method as string)) || 'GET';
+
+    // Useful debug information for diagnosing connectivity issues
+    console.debug('[apiClient] API Base URL utilizada:', base);
+    console.debug('[apiClient] fetch ->', method, url, init);
+
     const res = await fetch(url, init);
     const body = await parseJsonSafe(res);
 
@@ -29,10 +36,13 @@ export async function safeFetch<T = any>(path: string, init?: RequestInit): Prom
     else if (res.status >= 500) message = 'Erro no servidor. Tente novamente mais tarde.';
     if (body && (body.message || body.error)) message = body.message || body.error;
 
+    console.warn('[apiClient] response error', { status: res.status, url, message });
+
     return { success: false, error: message, status: res.status };
   } catch (err: any) {
-    console.error('Network/API error:', err);
-    return { success: false, error: 'Não foi possível conectar ao servidor. Verifique a URL da API e sua conexão.' };
+    // Log full error for debugging (do not return stack to UI)
+    console.error('[apiClient] Network/API error:', err);
+    return { success: false, error: 'Não foi possível conectar à API Nexus Verde. Verifique se o backend está em execução.' };
   }
 }
 
