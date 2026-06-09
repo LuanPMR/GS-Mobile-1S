@@ -11,18 +11,18 @@ namespace NexusVerde.Infrastructure;
 
 /// <summary>
 /// Dependency Injection para a camada Infrastructure
-/// Centraliza toda a configuração de persistência (banco de dados e repositórios)
+/// Centraliza toda a configuraï¿½ï¿½o de persistï¿½ncia (banco de dados e repositï¿½rios)
 /// </summary>
 public static class DependencyInjection
 {
     /// <summary>
-    /// Registra os serviços de Infrastructure (DbContext e Repositórios)
+    /// Registra os serviï¿½os de Infrastructure (DbContext e Repositï¿½rios)
     /// </summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration? configuration = null)
     {
         services.AddSingleton<AuditInterceptor>();
 
-        // Registrar repositórios
+        // Registrar repositï¿½rios
         services.AddScoped<IAlertaAmbientalRepository, AlertaAmbientalRepository>();
         services.AddScoped<IAnaliseImagemAmbientalRepository, AnaliseImagemAmbientalRepository>();
 
@@ -36,17 +36,17 @@ public static class DependencyInjection
 
     /// <summary>
     /// Configura o DbContext com Oracle ou InMemoryDatabase
-    /// Toda a lógica de persistência fica centralizada aqui
+    /// Toda a lï¿½gica de persistï¿½ncia fica centralizada aqui
     /// </summary>
     private static void ConfigureDatabase(IServiceCollection services, IConfiguration configuration)
     {
         // Exigir explicitamente a connection string Oracle para evitar fallback silencioso
-        // A chave esperada é exatamente: "NexusVerdeOracle"
+        // A chave esperada ï¿½ exatamente: "NexusVerdeOracle"
         var connectionString = configuration.GetConnectionString("NexusVerdeOracle");
 
         if (string.IsNullOrWhiteSpace(connectionString))
         {
-            // Ambiente de desenvolvimento sem Oracle configurado: usa InMemory database para permitir execução local e testes.
+            // Ambiente de desenvolvimento sem Oracle configurado: usa InMemory database para permitir execuï¿½ï¿½o local e testes.
             services.AddDbContext<VeterinaryDbContext>((sp, options) =>
             {
                 options.UseInMemoryDatabase("NexusVerde_InMemory");

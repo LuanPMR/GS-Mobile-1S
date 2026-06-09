@@ -12,10 +12,21 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { getRegions, RegionDto } from '@/services/regionService';
 
 function formatBioma(b: any) {
-  const map: Record<number, string> = { 1: 'Amazônia', 2: 'Cerrado', 3: 'Mata Atlântica', 4: 'Caatinga', 5: 'Pantanal', 6: 'Pampa', 7: 'Outro' };
+  const mapNum: Record<number, string> = { 1: 'Amazônia', 2: 'Cerrado', 3: 'Mata Atlântica', 4: 'Caatinga', 5: 'Pantanal', 6: 'Pampa', 7: 'Outro' };
+  const mapStr: Record<string, string> = {
+    Amazonia: 'Amazônia',
+    Cerrado: 'Cerrado',
+    MataAtlantica: 'Mata Atlântica',
+    Caatinga: 'Caatinga',
+    Pantanal: 'Pantanal',
+    Pampa: 'Pampa',
+    Outro: 'Outro',
+  };
+
   if (b == null) return '—';
-  if (typeof b === 'number') return map[b] ?? `Bioma ${b}`;
-  return String(b);
+  if (typeof b === 'number') return mapNum[b] ?? `Bioma ${b}`;
+  const s = String(b);
+  return mapStr[s] ?? s;
 }
 
 export default function RegionsScreen() {
@@ -75,12 +86,12 @@ export default function RegionsScreen() {
                   <Link href={{ pathname: '/alerts', params: { region: String(item.id) } }} asChild>
                     <Pressable style={styles.linkButton}>
                       <ThemedText type="linkPrimary">Ver alertas</ThemedText>
-                    </Pressable>
-                  </Link>
-                </View>
-              </Card>
-            )}
-          />
+                      <Pressable
+                        style={styles.linkButton}
+                        onPress={() => confirmDelete(item.id, item.nome ?? item.Nome)}
+                      >
+                        <ThemedText type="link" themeColor="danger">{deletingId === item.id ? 'Excluindo...' : 'Excluir'}</ThemedText>
+                      </Pressable>
         )}
       </SafeAreaView>
     </ThemedView>
