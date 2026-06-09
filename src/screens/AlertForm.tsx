@@ -1,4 +1,4 @@
-import { useRouter, useSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { Alert, SafeAreaView, StyleSheet, Switch, TextInput, View } from 'react-native';
 
@@ -28,7 +28,7 @@ const NIVEL_RISCO = ['Baixo', 'Medio', 'Alto', 'Critico'];
 
 export default function AlertFormScreen() {
   const router = useRouter();
-  const params = useSearchParams();
+  const params = useLocalSearchParams();
   const editId = params.id as string | undefined;
 
   const [regiaoId, setRegiaoId] = React.useState<number | null>(null);
@@ -161,8 +161,8 @@ export default function AlertFormScreen() {
             {regions.length === 0 ? (
               <ThemedText type="small">Nenhuma região disponível.</ThemedText>
             ) : (
-              regions.map((r) => (
-                <Button key={r.id} title={(r.nome ?? r.Nome) as string} variant={regiaoId === r.id ? 'primary' : 'secondary'} onPress={() => setRegiaoId(r.id)} style={{ marginBottom: Spacing.two }} />
+              regions.map((r: any) => (
+                <Button key={r.id} title={(r.nome ?? (r as any).Nome) as string} variant={regiaoId === r.id ? 'primary' : 'secondary'} onPress={() => setRegiaoId(r.id)} style={{ marginBottom: Spacing.two }} />
               ))
             )}
           </View>

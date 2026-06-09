@@ -10,6 +10,39 @@ Aplicativo móvel desenvolvido em Expo / React Native para demonstrar funcionali
 - @react-native-async-storage/async-storage (persistência local)
 - fetch (HTTP via `src/services/apiClient.ts`)
 - Backend esperado: .NET WebAPI (projeto `NexusVerde WebAPI` no repositório)
+# Nexus Verde — GS Mobile
+
+Aplicativo móvel da Global Solution (projeto Nexus Verde) para monitoramento ambiental, com gestão de Regiões Monitoradas, Alertas Ambientais e simulação de Análises Ambientais.
+
+## Descrição da solução
+
+O app permite que usuários visualizem e gerenciem regiões monitoradas, registrem alertas ambientais (criação, edição, resolução e exclusão) e executem simulações de análises baseadas em imagens de satélite. A aplicação prioriza comunicação com a API REST do backend; quando a API não estiver disponível, há um fallback local via `AsyncStorage` para manter funcionalidades básicas offline.
+
+## Tema
+
+Global Solution — Plataforma de monitoramento ambiental para detecção e gestão de eventos como queimadas e desmatamento.
+
+## Tecnologias
+
+- Expo / React Native
+- TypeScript
+- expo-router (file-based routing)
+- `@react-native-async-storage/async-storage` (fallback local)
+- `fetch` (HTTP via `src/services/apiClient.ts`)
+- ESLint (configurado via `expo lint`)
+
+## Estrutura de pastas (resumo)
+
+Principais diretórios e arquivos no repositório:
+
+- `assets/` — imagens e ícones do app
+- `NexusVerde-Fiap/` — projeto backend .NET e coleções relacionadas
+- `src/` — código fonte do app (screens, components, services, hooks)
+- `src/app/` — rotas base (expo-router)
+- `src/components/` — componentes reutilizáveis
+- `src/services/` — comunicação com API e lógica de persistência
+- `src/screens/` — telas do app
+- `package.json`, `app.json`, `tsconfig.json` — configuração do projeto
 
 ## Instalar dependências
 
@@ -25,70 +58,39 @@ npm install
 npm start
 ```
 
-- Abrir em emulador Android / iOS ou em um dispositivo com Expo Go (veja as opções exibidas pelo `expo`).
-- Comandos alternativos (scripts definidos em `package.json`):
-
-```bash
-npm run android
-npm run ios
-npm run web
-```
+- Abrir em emulador Android / iOS ou em um dispositivo com Expo Go.
+- Comandos alternativos (scripts em `package.json`): `npm run android`, `npm run ios`, `npm run web`.
 
 ## Configurar `API_BASE_URL`
 
-A URL base da API é definida em `src/services/config.ts` e por padrão é `http://localhost:5170`.
+A URL base da API é resolvida em `src/services/config.ts`. Prioridades: variável de ambiente `EXPO_PUBLIC_API_URL`, campo `expo.extra` em `app.json` (`EXPO_PUBLIC_API_URL` ou `apiUrl`), então fallback `http://localhost:5170`.
 
-- Variável de ambiente pública (recomendada para dev): `EXPO_PUBLIC_API_URL`.
-
-Exemplos para iniciar o servidor Expo apontando para a API (substitua o IP pelo da sua máquina quando necessário):
-
-Windows (PowerShell):
+Exemplos de uso (PowerShell):
 
 ```powershell
 $env:EXPO_PUBLIC_API_URL = "http://192.168.1.100:5170"
 npm start
 ```
 
-Windows (cmd):
+Ou edite `app.json` adicionando em `expo.extra`:
 
-```cmd
-set EXPO_PUBLIC_API_URL=http://192.168.1.100:5170&& npm start
+```json
+{
+   "expo": {
+      "extra": {
+         "EXPO_PUBLIC_API_URL": "http://192.168.1.100:5170"
+      }
+   }
+}
 ```
 
-macOS / Linux:
+> Observação: para uso em dispositivo físico, use o IP da máquina que roda a API.
 
-```bash
-EXPO_PUBLIC_API_URL=http://192.168.1.100:5170 npm start
-```
+## Requisitos da API
 
-- Alternativa em tempo de execução (dentro do app):
+O backend deve estar executando para que as operações principais (CRUD de Regiões, Alertas e Análises) funcionem sem fallback. A aplicação tentará usar a API como fonte primária — AsyncStorage é apenas fallback local.
 
-```ts
-import { setApiBaseUrl } from '@/services/api';
-setApiBaseUrl('http://192.168.1.100:5170');
-```
-
-## Observações importantes sobre `localhost` e redes
-
-- `localhost` pode funcionar automaticamente no iOS Simulator (ele resolve para a máquina host). No Android emulator clássico (AVD) o endereço da máquina host costuma ser `10.0.2.2` (ou `10.0.3.2` em alguns emuladores como Genymotion).
-- Em um celular físico você deve usar o IP da sua máquina na mesma rede (ex.: `http://192.168.1.100:5170`).
-- API padrão (quando estiver rodando localmente): `http://localhost:5170`
-- Swagger provável (quando a API estiver no host local): `http://localhost:5170/swagger`
-
-## Telas do app
-
-- **Home**: Tela principal / dashboard.
-- **Monitoramento**: Mostra satélites em fila, status e permite iniciar/parar simulação local.
-- **Regiões**: Lista de regiões monitoradas; permite criar, editar e excluir regiões.
-- **Novo / Editar Região**: Formulário para criar ou atualizar uma região (nome, bioma, localização, área, etc.).
-- **Alertas**: Lista de alertas ambientais; permite criar, editar, resolver e excluir alertas.
-- **Novo / Editar Alerta**: Formulário para criar ou atualizar alertas (região relacionada, tipo, nível de risco, mensagem).
-- **Análises**: Permite selecionar região e fonte satelital, simular uma análise ambiental e listar análises existentes.
-- **Explorar / Relatórios / Equipe**: Telas auxiliares (exploração, envio de relatórios e informações da equipe).
-
-## Endpoints usados pelo app
-
-O app foi desenhado para trabalhar com a API REST do backend `NexusVerde WebAPI`. Os endpoints principais que o app consome são:
+### Endpoints consumidos
 
 - Regiões monitoradas
    - GET `/api/RegioesMonitoradas` — listar regiões
@@ -98,67 +100,43 @@ O app foi desenhado para trabalhar com a API REST do backend `NexusVerde WebAPI`
    - DELETE `/api/RegioesMonitoradas/{id}` — excluir região
 
 - Alertas ambientais
-   - GET `/api/AlertasAmbientais` — listar alertas
-   - GET `/api/AlertasAmbientais/pendentes` — listar alertas pendentes
-   - GET `/api/AlertasAmbientais/{id}` — obter alerta por id
-   - POST `/api/AlertasAmbientais` — criar alerta
-   - PUT `/api/AlertasAmbientais/{id}` — atualizar alerta
-   - PUT `/api/AlertasAmbientais/{id}/resolver` — marcar alerta como resolvido
-   - DELETE `/api/AlertasAmbientais/{id}` — excluir alerta
+   - GET `/api/AlertasAmbientais`
+   - GET `/api/AlertasAmbientais/pendentes`
+   - GET `/api/AlertasAmbientais/{id}`
+   - POST `/api/AlertasAmbientais`
+   - PUT `/api/AlertasAmbientais/{id}`
+   - PUT `/api/AlertasAmbientais/{id}/resolver`
+   - DELETE `/api/AlertasAmbientais/{id}`
 
 - Fontes satelitais
-   - GET `/api/FontesSatelitais` — listar fontes
-   - POST `/api/FontesSatelitais` — criar fonte (quando aplicável)
+   - GET `/api/FontesSatelitais`
+   - POST `/api/FontesSatelitais`
 
 - Análises ambientais
-   - POST `/api/AnalisesAmbientais/simular` — simular análise
-      - Body esperado (ex.): `{ "regiaoMonitoradaId": 1, "fonteSatelitalId": 2, "dataCaptura": "2026-06-09T12:00:00Z" }`
-   - GET `/api/AnalisesAmbientais` — listar análises
+   - POST `/api/AnalisesAmbientais/simular`
+   - GET `/api/AnalisesAmbientais`
 
-Observação: a aplicação tenta usar os endpoints quando a API está disponível; quando não está, várias funcionalidades têm fallback local via `AsyncStorage` para manter o app funcional offline.
+## Regras aplicadas
 
-## CRUD de Regiões e Alertas
+- O `regionService` foi atualizado para usar a API como fonte principal. O fallback para `AsyncStorage` permanece apenas quando a API não responder.
+- Tratamento de erros e loaders existem nas telas e em `src/services/apiClient.ts`.
 
-- Regiões:
-   - Tela: **Regiões** e **Novo / Editar Região**.
-   - Campos principais: `nome`, `bioma`, `estado`, `pais`, `latitude`, `longitude`, `areaKm2`, `ativa`.
-   - Persistência local: chaves `nexusverde_regions_v1` e `nexusverde_regions_last_id` no `AsyncStorage`.
-   - Observação: a implementação atual do serviço de regiões grava localmente (AsyncStorage) para garantir que o app funcione sem backend.
+## Equipe (RM)
 
-- Alertas:
-   - Tela: **Alertas** e **Novo / Editar Alerta**.
-   - Campos principais: `regiaoMonitoradaId`, `analiseAmbientalId` (opcional), `tipoAlerta`, `nivelRisco`, `mensagem`, `resolvido`.
-   - Fluxos suportados: criar, editar, listar, excluir e resolver (marcar como resolvido).
-   - Persistência e fallback: o `alertService` tenta chamar os endpoints do backend e, em caso de falha, persiste localmente em `AsyncStorage` usando as chaves `nexusverde_alerts_v1` e `nexusverde_alerts_last_id`.
-   - O app mapeia o DTO do backend para um modelo de ocorrência (`Occurrence`) usado na UI.
+- Mathaus Victor Souza Marcelino — RM: 564146
+- Luan Peixoto Marins Rocha — RM: 562258
+- Carlos Alberto Guedes Neto — RM: 566022
+- Filippo Tolone — RM: 562329
+- Eduardo Novaes Mollo — RM: 561515
 
-## Simulação de análise ambiental
+## Vídeo demonstrativo
 
-- Tela: **Análises**.
-- O usuário seleciona uma região e uma fonte satelital e clica em **Simular análise**.
-- Endpoint: `POST /api/AnalisesAmbientais/simular` com corpo contendo `regiaoMonitoradaId`, `fonteSatelitalId` e `dataCaptura`.
-- Campos retornados que são exibidos na UI: `ndviMedio`, `percentualVegetacao`, `percentualSoloExposto`, `percentualAreaQueimada`, `classificacao`, `nivelRisco`, `resumo`, `dataAnalise`.
-- Fallback local: quando a API não estiver disponível a aplicação gera uma simulação local (heurística simples) e persiste o resultado em `AsyncStorage` com as chaves `nexusverde_analises_v1` e `nexusverde_analises_last_id`.
+- Link: (placeholder) — substitua com link do vídeo do projeto quando disponível.
 
-## Integrantes / RMs
+## Observações finais
 
-Preencha com os integrantes reais do grupo:
+- Para desenvolvimento local: assegure que a API esteja rodando e acessível na rede.
+- Execute `npx tsc --noEmit` e `npx eslint . --ext .ts,.tsx` para validar TypeScript e lint.
 
-- Nome Sobrenome — RM 000000
-- Nome Sobrenome — RM 000000
-- Nome Sobrenome — RM 000000
-
-## Link do vídeo
-
-Insira aqui o link do vídeo demonstrativo (placeholder):
-
-- LINK_DO_VIDEO_AQUI
-
-## Como contribuir
-
-- Faça um fork, crie uma branch feature/descrição e envie um pull request.
-- Para alterações relacionadas à API, priorizar compatibilidade com a estrutura de DTOs em `NexusVerde.Application/DTOs`.
-
----
-
-Se precisar, posso ajustar o README com os nomes reais dos integrantes e o link do vídeo. Deseja que eu adicione esses dados agora?
+Se quiser, eu posso automaticamente commitar as mudanças e abrir um branch com as alterações feitas.
+- Análises ambientais

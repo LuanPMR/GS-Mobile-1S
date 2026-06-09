@@ -1,4 +1,4 @@
-import { useRouter, useSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { Alert, SafeAreaView, StyleSheet, Switch, TextInput, View } from 'react-native';
 
@@ -24,7 +24,7 @@ const BIOMAS = [
 
 export default function RegionFormScreen() {
   const router = useRouter();
-  const params = useSearchParams();
+  const params = useLocalSearchParams();
   const editId = params.id as string | undefined;
 
   const [nome, setNome] = React.useState('');

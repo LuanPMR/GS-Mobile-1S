@@ -48,7 +48,7 @@ export default function MonitoringScreen() {
         const res = await getSources();
         if (cancelled) return;
         if (res.success && res.data && res.data.length > 0) {
-          const mapped = res.data.map<Satellite>((s) => ({ id: s.id, name: s.nome ?? s.Nome, region: s.provedor ?? s.tipo ?? '—' }));
+          const mapped = res.data.map<Satellite>((s: any) => ({ id: s.id, name: s.nome ?? (s as any).Nome, region: s.provedor ?? s.tipo ?? '—' }));
           setSources(mapped);
         } else {
           // keep fallback
@@ -98,7 +98,7 @@ export default function MonitoringScreen() {
         ) : error ? (
           <>
             <ThemedText type="small" themeColor="danger">{error}</ThemedText>
-            <Button title="Tentar novamente" onPress={() => { setError(null); setLoading(true); (async () => { const r = await getSources(); if (r.success && r.data) setSources(r.data.map((s) => ({ id: s.id, name: s.nome ?? s.Nome, region: s.provedor ?? s.tipo ?? '—' }))); else setSources(null); setLoading(false); })(); }} style={{ marginTop: Spacing.two }} />
+            <Button title="Tentar novamente" onPress={() => { setError(null); setLoading(true); (async () => { const r = await getSources(); if (r.success && r.data) setSources(r.data.map((s: any) => ({ id: s.id, name: s.nome ?? (s as any).Nome, region: s.provedor ?? s.tipo ?? '—' }))); else setSources(null); setLoading(false); })(); }} style={{ marginTop: Spacing.two }} />
           </>
         ) : (
           <>
@@ -137,7 +137,7 @@ export default function MonitoringScreen() {
             <ThemedText type="subtitle">Fila de satélites</ThemedText>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.timeline} contentContainerStyle={styles.timelineContent}>
               {(sources ?? SATELLITES).map((s, i) => (
-                <Card key={s.id} style={[styles.timelineItem, active === i && { borderColor: theme.primary, borderWidth: 2 }]}>
+                <Card key={s.id} style={active === i ? [styles.timelineItem, { borderColor: theme.primary, borderWidth: 2 }] : styles.timelineItem}>
                   <ThemedText type="smallBold">{s.name}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">{s.region}</ThemedText>
                   <ThemedText type="small" themeColor={active === i ? 'primary' : 'textSecondary'}>{active === i ? 'Ativo' : i === (active + 1) % (sources ?? SATELLITES).length ? 'Próximo' : 'Aguardando'}</ThemedText>

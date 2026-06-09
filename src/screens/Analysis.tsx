@@ -47,7 +47,8 @@ export default function AnalysisScreen() {
   }, []);
 
   React.useEffect(() => {
-    loadAll();
+    const t = setTimeout(() => loadAll(), 0);
+    return () => clearTimeout(t);
   }, [loadAll]);
 
   const onSimulate = async () => {
@@ -98,8 +99,8 @@ export default function AnalysisScreen() {
                 {(regions ?? []).length === 0 ? (
                   <ThemedText type="small">Nenhuma região disponível.</ThemedText>
                 ) : (
-                  (regions ?? []).map((r) => (
-                    <Button key={r.id} title={(r.nome ?? r.Nome) as string} variant={selectedRegion === r.id ? 'primary' : 'secondary'} onPress={() => setSelectedRegion(r.id)} style={{ marginBottom: Spacing.two }} />
+                  (regions ?? []).map((r: any) => (
+                    <Button key={r.id} title={(r.nome ?? (r as any).Nome) as string} variant={selectedRegion === r.id ? 'primary' : 'secondary'} onPress={() => setSelectedRegion(r.id)} style={{ marginBottom: Spacing.two }} />
                   ))
                 )}
               </View>
@@ -109,8 +110,8 @@ export default function AnalysisScreen() {
                 {(sources ?? []).length === 0 ? (
                   <ThemedText type="small">Nenhuma fonte disponível.</ThemedText>
                 ) : (
-                  (sources ?? []).map((s) => (
-                    <Button key={s.id} title={(s.nome ?? s.Nome) as string} variant={selectedSource === s.id ? 'primary' : 'secondary'} onPress={() => setSelectedSource(s.id)} style={{ marginBottom: Spacing.two }} />
+                  (sources ?? []).map((s: any) => (
+                    <Button key={s.id} title={(s.nome ?? (s as any).Nome) as string} variant={selectedSource === s.id ? 'primary' : 'secondary'} onPress={() => setSelectedSource(s.id)} style={{ marginBottom: Spacing.two }} />
                   ))
                 )}
               </View>

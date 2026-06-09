@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ApiResponse } from './apiClient';
+import { ApiResponse, deleteJson, getJson, postJson, putJson } from './apiClient';
 
 export type RegionDto = {
   id: number;
@@ -58,6 +58,15 @@ async function saveAll(regs: RegionDto[]) {
 }
 
 export async function getRegions(): Promise<ApiResponse<RegionDto[]>> {
+  // Try API first
+  try {
+    const res = await getJson<RegionDto[]>('RegioesMonitoradas');
+    if (res.success && res.data) return { success: true, data: res.data };
+  } catch {
+    // ignore and fallback to local
+  }
+
+  // Fallback to local storage
   try {
     const regs = await loadAll();
     return { success: true, data: regs };
@@ -67,6 +76,13 @@ export async function getRegions(): Promise<ApiResponse<RegionDto[]>> {
 }
 
 export async function getRegionById(id: number | string): Promise<ApiResponse<RegionDto>> {
+  try {
+    const res = await getJson<RegionDto>(`RegioesMonitoradas/${id}`);
+    if (res.success && res.data) return { success: true, data: res.data };
+  } catch {
+    // ignore fallback
+  }
+
   try {
     const regs = await loadAll();
     const n = Number(id);
@@ -79,6 +95,15 @@ export async function getRegionById(id: number | string): Promise<ApiResponse<Re
 }
 
 export async function createRegion(payload: any): Promise<ApiResponse<RegionDto>> {
+  // Try API
+  try {
+    const res = await postJson<RegionDto>('RegioesMonitoradas', payload);
+    if (res.success && res.data) return { success: true, data: res.data };
+  } catch {
+    // fallback
+  }
+
+  // Local fallback
   try {
     const regs = await loadAll();
     const lastRaw = await AsyncStorage.getItem(LAST_ID_KEY);
@@ -111,6 +136,14 @@ export async function createRegion(payload: any): Promise<ApiResponse<RegionDto>
 }
 
 export async function updateRegion(id: number | string, payload: any): Promise<ApiResponse<RegionDto>> {
+  // Try API
+  try {
+    const res = await putJson<RegionDto>(`RegioesMonitoradas/${id}`, payload);
+    if (res.success && res.data) return { success: true, data: res.data };
+  } catch {
+    // fallback
+  }
+
   try {
     const regs = await loadAll();
     const n = Number(id);
@@ -140,6 +173,14 @@ export async function updateRegion(id: number | string, payload: any): Promise<A
 }
 
 export async function deleteRegion(id: number | string): Promise<ApiResponse<null>> {
+  // Try API
+  try {
+    const res = await deleteJson<null>(`RegioesMonitoradas/${id}`);
+    if (res.success) return { success: true, data: null };
+  } catch {
+    // fallback
+  }
+
   try {
     const regs = await loadAll();
     const n = Number(id);

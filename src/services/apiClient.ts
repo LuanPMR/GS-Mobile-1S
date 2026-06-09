@@ -10,7 +10,7 @@ export type ApiResponse<T> = {
 async function parseJsonSafe(res: Response) {
   try {
     return await res.json();
-  } catch (e) {
+  } catch {
     return null;
   }
 }

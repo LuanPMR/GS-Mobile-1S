@@ -1,6 +1,6 @@
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import React from 'react';
-import { FlatList, Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -9,7 +9,7 @@ import { Loading } from '@/components/loading';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { getRegions, RegionDto } from '@/services/regionService';
+import { deleteRegion, getRegions, RegionDto } from '@/services/regionService';
 
 function formatBioma(b: any) {
   const mapNum: Record<number, string> = { 1: 'Amazônia', 2: 'Cerrado', 3: 'Mata Atlântica', 4: 'Caatinga', 5: 'Pantanal', 6: 'Pampa', 7: 'Outro' };
@@ -30,9 +30,11 @@ function formatBioma(b: any) {
 }
 
 export default function RegionsScreen() {
+  const router = useRouter();
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [data, setData] = React.useState<RegionDto[] | null>(null);
+  const [deletingId, setDeletingId] = React.useState<number | string | null>(null);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -54,8 +56,33 @@ export default function RegionsScreen() {
   }, []);
 
   React.useEffect(() => {
-    load();
+    const t = setTimeout(() => load(), 0);
+    return () => clearTimeout(t);
   }, [load]);
+
+  async function confirmDelete(id: number | string, name?: string) {
+    const ok = await new Promise<boolean>((resolve) => {
+      Alert.alert('Confirmar exclusão', `Deseja excluir a região "${name ?? id}"?`, [
+        { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+        { text: 'Excluir', style: 'destructive', onPress: () => resolve(true) },
+      ]);
+    });
+    if (!ok) return;
+    try {
+      setDeletingId(id);
+      const res = await deleteRegion(id as any);
+      setDeletingId(null);
+      if (res.success) {
+        Alert.alert('Sucesso', 'Região excluída.');
+        setData((prev) => (prev ?? []).filter((r) => String(r.id) !== String(id)));
+      } else {
+        Alert.alert('Erro', res.error || 'Falha ao excluir região.');
+      }
+    } catch (e: any) {
+      setDeletingId(null);
+      Alert.alert('Erro', e?.message || 'Erro desconhecido');
+    }
+  }
 
   return (
     <ThemedView style={styles.container}>
@@ -70,28 +97,50 @@ export default function RegionsScreen() {
             <Button title="Tentar novamente" onPress={load} style={{ marginTop: Spacing.two }} />
           </>
         ) : (
-          <FlatList
-            data={data ?? []}
-            keyExtractor={(r) => String(r.id)}
-            contentContainerStyle={{ paddingBottom: Spacing.six }}
-            renderItem={({ item }) => (
-              <Card>
-                <View style={styles.row}>
-                  <View style={{ flex: 1 }}>
-                    <ThemedText type="smallBold">{item.nome ?? item.Nome}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">{formatBioma(item.bioma ?? item.Bioma)} • {item.estado ?? item.Estado ?? '—'}</ThemedText>
-                    <ThemedText type="small">{item.pais ?? item.Pais ?? '—'} • {item.areaKm2 ?? item.AreaKm2 ?? '—'} km²</ThemedText>
-                  </View>
+          <>
+            <View style={{ marginBottom: Spacing.two }}>
+              <Link href={{ pathname: '/region-form' }} asChild>
+                <Pressable>
+                  <Button title="Nova região" />
+                </Pressable>
+              </Link>
+            </View>
 
-                  <Link href={{ pathname: '/alerts', params: { region: String(item.id) } }} asChild>
-                    <Pressable style={styles.linkButton}>
-                      <ThemedText type="linkPrimary">Ver alertas</ThemedText>
-                      <Pressable
-                        style={styles.linkButton}
-                        onPress={() => confirmDelete(item.id, item.nome ?? item.Nome)}
-                      >
-                        <ThemedText type="link" themeColor="danger">{deletingId === item.id ? 'Excluindo...' : 'Excluir'}</ThemedText>
-                      </Pressable>
+            <FlatList
+              data={data ?? []}
+              keyExtractor={(r) => String(r.id)}
+              contentContainerStyle={{ paddingBottom: Spacing.six }}
+              renderItem={({ item }) => (
+                <Card>
+                  <View style={styles.row}>
+                    <View style={{ flex: 1 }}>
+                      <ThemedText type="smallBold">{item.nome ?? (item as any).Nome}</ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">{formatBioma(item.bioma ?? (item as any).Bioma)} • {item.estado ?? (item as any).Estado ?? '—'}</ThemedText>
+                      <ThemedText type="small">{item.pais ?? (item as any).Pais ?? '—'} • {item.areaKm2 ?? (item as any).AreaKm2 ?? '—'} km²</ThemedText>
+                    </View>
+
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <View style={{ flexDirection: 'row' }}>
+                        <Pressable onPress={() => router.push(`/region-form?id=${item.id}`)} style={styles.linkButton}>
+                          <ThemedText type="linkPrimary">Editar</ThemedText>
+                        </Pressable>
+
+                        <Link href={{ pathname: '/alerts', params: { region: String(item.id) } }} asChild>
+                          <Pressable style={[styles.linkButton, { marginLeft: Spacing.two }]}>
+                            <ThemedText type="linkPrimary">Ver alertas</ThemedText>
+                          </Pressable>
+                        </Link>
+
+                        <Pressable onPress={() => confirmDelete(item.id, item.nome ?? (item as any).Nome)} style={[styles.linkButton, { marginLeft: Spacing.two }]}>
+                          <ThemedText type="link" themeColor="danger">{deletingId === item.id ? 'Excluindo...' : 'Excluir'}</ThemedText>
+                        </Pressable>
+                      </View>
+                    </View>
+                  </View>
+                </Card>
+              )}
+            />
+          </>
         )}
       </SafeAreaView>
     </ThemedView>

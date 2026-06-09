@@ -27,7 +27,7 @@ export default function HomeScreen() {
       const [rRes, aRes, sRes] = await Promise.all([getRegions(), getPendentes(), getSources()]);
       setRegionsCount(rRes.success && rRes.data ? rRes.data.length : 0);
       setPendingAlertsCount(aRes.success && aRes.data ? aRes.data.length : 0);
-      setSourcesCount(sRes.success && sRes.data ? sRes.data.filter((x) => x.ativo ?? x.Ativo ?? true).length : 0);
+      setSourcesCount(sRes.success && sRes.data ? sRes.data.filter((x) => x.ativo ?? (x as any).Ativo ?? true).length : 0);
     } catch (err: any) {
       setError(err?.message || 'Erro ao carregar resumo');
     } finally {
@@ -36,7 +36,8 @@ export default function HomeScreen() {
   }, []);
 
   React.useEffect(() => {
-    load();
+    const t = setTimeout(() => load(), 0);
+    return () => clearTimeout(t);
   }, [load]);
 
   return (

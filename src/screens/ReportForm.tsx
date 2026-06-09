@@ -1,4 +1,4 @@
-import { useRouter, useSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { Alert, SafeAreaView, StyleSheet, TextInput, View } from 'react-native';
 
@@ -13,7 +13,7 @@ import { ApiResponse, createOccurrence, getOccurrenceById, updateOccurrence } fr
 
 export default function ReportFormScreen() {
   const router = useRouter();
-  const params = useSearchParams();
+  const params = useLocalSearchParams();
   const editId = params.id as string | undefined;
   const [regionName, setRegionName] = React.useState('');
   const [satelliteCode, setSatelliteCode] = React.useState('');

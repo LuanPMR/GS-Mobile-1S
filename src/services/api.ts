@@ -1,6 +1,7 @@
 import * as alertService from './alertService';
 import type { ApiResponse } from './apiClient';
 import { getApiBaseUrl, setApiBaseUrl } from './config';
+export type { ApiResponse } from './apiClient';
 
 export type Occurrence = alertService.Occurrence;
 

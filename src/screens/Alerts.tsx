@@ -1,4 +1,4 @@
-import { useRouter, useSearchParams } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { Alert, FlatList, Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
 
@@ -10,7 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { deleteAlert, getAlertsRaw, resolveAlert } from '@/services/alertService';
-import { Link } from 'expo-router';
+
 
 type AlertDisplay = {
   id: number | string;
@@ -27,7 +27,7 @@ const SAMPLE_FALLBACK: AlertDisplay[] = [
 ];
 
 export default function AlertsScreen() {
-  const params = useSearchParams();
+  const params = useLocalSearchParams();
   const router = useRouter();
   const region = (params.region as string) || '';
   const [loading, setLoading] = React.useState(true);
@@ -39,10 +39,10 @@ export default function AlertsScreen() {
   const loadAlerts = React.useCallback(async () => {
     setLoading(true);
     setError(null);
-    try {
+        try {
       const res = await getAlertsRaw();
       if (res.success && res.data) {
-        const mapped = res.data.map((d) => ({
+        const mapped = res.data.map((d: any) => ({
           id: d.id ?? d.Id,
           tipoAlerta: String(d.tipoAlerta ?? d.TipoAlerta ?? d.tipoAlerta),
           nivelRisco: String(d.nivelRisco ?? d.NivelRisco ?? d.nivelRisco),
@@ -62,11 +62,12 @@ export default function AlertsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [region, refresh]);
+  }, []);
 
   React.useEffect(() => {
-    loadAlerts();
-  }, [loadAlerts]);
+    const t = setTimeout(() => loadAlerts(), 0);
+    return () => clearTimeout(t);
+  }, [region, refresh, loadAlerts]);
 
   const occurrences = (data ?? []).filter((o) => {
     if (!region) return true;
@@ -183,6 +184,7 @@ export default function AlertsScreen() {
               </Card>
             )}
           />
+          </>
         )}
       </SafeAreaView>
     </ThemedView>

@@ -25,32 +25,25 @@ export type Occurrence = {
   detectedAt?: string;
 };
 
-const SAMPLE_FALLBACK: Occurrence[] = [
-  {
-    id: 'f1',
-    regionName: 'Amazônia',
-    satelliteCode: 'MS-01',
-    status: 'QUEIMADA',
-    vegetationColor: 'PRETO',
-    description: 'Fumaça detectada por algoritmo de IA (fallback).',
-    detectedAt: new Date().toISOString(),
-  },
-];
+// NOTE: no module-level SAMPLE_FALLBACK is required here — consumers provide their own UI fallbacks.
 
 function mapDtoToOccurrence(dto: any): Occurrence {
   // dto may use PascalCase or camelCase depending on backend JSON serializer.
   const id = dto.id ?? dto.Id;
   const regiaoId = dto.regiaoMonitoradaId ?? dto.RegiaoMonitoradaId;
-  const tipo = (dto.tipoAlerta ?? dto.TipoAlerta) as any;
-  const nivel = (dto.nivelRisco ?? dto.NivelRisco) as any;
-  const mensagem = dto.mensagem ?? dto.Mensagem ?? dto.mensagem ?? dto.Mensagem;
+  const tipo = dto.tipoAlerta ?? dto.TipoAlerta ?? '';
+  const nivel = dto.nivelRisco ?? dto.NivelRisco ?? '';
+  const mensagem = dto.mensagem ?? dto.Mensagem ?? undefined;
   const dataCriacao = dto.dataCriacao ?? dto.DataCriacao;
 
   // Map backend alert types to app status
+  const tipoStr = String(tipo).toLowerCase();
+  const nivelStr = String(nivel).toLowerCase();
+
   let status: Occurrence['status'] = 'RISCO';
-  if (String(tipo).toLowerCase().includes('queim') || String(tipo).toLowerCase().includes('Queimada')) status = 'QUEIMADA';
-  else if (String(tipo).toLowerCase().includes('desmat') || String(tipo).toLowerCase().includes('Desmatamento')) status = 'DESMATAMENTO';
-  else if (String(nivel).toLowerCase().includes('alto') || String(nivel).toLowerCase().includes('crit')) status = 'RISCO';
+  if (tipoStr.includes('queim')) status = 'QUEIMADA';
+  else if (tipoStr.includes('desmat')) status = 'DESMATAMENTO';
+  else if (nivelStr.includes('alto') || nivelStr.includes('crit')) status = 'RISCO';
   else status = 'PRESERVADA';
 
   const vegetationColor: Occurrence['vegetationColor'] = status === 'QUEIMADA' ? 'PRETO' : status === 'DESMATAMENTO' ? 'MARROM' : 'VERDE';
@@ -102,7 +95,7 @@ export async function getAlerts(): Promise<ApiResponse<AlertaAmbientalDto[] | Oc
   try {
     const res = await getJson<AlertaAmbientalDto[]>('AlertasAmbientais');
     if (res.success && res.data) return { success: true, data: res.data.map(mapDtoToOccurrence) } as ApiResponse<any>;
-  } catch (e) {
+  } catch {
     // ignore and fallback to local
   }
 
@@ -120,7 +113,7 @@ export async function getAlertsRaw(): Promise<ApiResponse<AlertaAmbientalDto[]>>
   try {
     const res = await getJson<AlertaAmbientalDto[]>('AlertasAmbientais');
     if (res.success && res.data) return res;
-  } catch (e) {
+  } catch {
     // ignore
   }
 
@@ -136,7 +129,7 @@ export async function getAlertById(id: number | string): Promise<ApiResponse<Occ
   try {
     const res = await getJson<AlertaAmbientalDto>(`AlertasAmbientais/${id}`);
     if (res.success && res.data) return { success: true, data: mapDtoToOccurrence(res.data) } as ApiResponse<any>;
-  } catch (e) {
+  } catch {
     // fallback
   }
 
@@ -155,7 +148,7 @@ export async function getAlertByIdRaw(id: number | string): Promise<ApiResponse<
   try {
     const res = await getJson<AlertaAmbientalDto>(`AlertasAmbientais/${id}`);
     if (res.success && res.data) return res;
-  } catch (e) {
+  } catch {
     // ignore
   }
 
@@ -174,7 +167,7 @@ export async function getPendentes(): Promise<ApiResponse<Occurrence[]>> {
   try {
     const res = await getJson<AlertaAmbientalDto[]>('AlertasAmbientais/pendentes');
     if (res.success && res.data) return { success: true, data: res.data.map(mapDtoToOccurrence) } as ApiResponse<any>;
-  } catch (e) {
+  } catch {
     // ignore fallback to local
   }
 
@@ -191,7 +184,7 @@ export async function createAlert(payload: any): Promise<ApiResponse<Occurrence>
   try {
     const res = await postJson<AlertaAmbientalDto>('AlertasAmbientais', payload);
     if (res.success && res.data) return { success: true, data: mapDtoToOccurrence(res.data) } as ApiResponse<any>;
-  } catch (e) {
+  } catch {
     // fallback to local
   }
 
@@ -228,7 +221,7 @@ export async function updateAlert(id: number | string, payload: any): Promise<Ap
   try {
     const res = await putJson<AlertaAmbientalDto>(`AlertasAmbientais/${id}`, payload);
     if (res.success && res.data) return { success: true, data: mapDtoToOccurrence(res.data) } as ApiResponse<any>;
-  } catch (e) {
+  } catch {
     // fallback
   }
 
@@ -260,7 +253,7 @@ export async function resolveAlert(id: number | string): Promise<ApiResponse<Occ
   try {
     const res = await putJson<AlertaAmbientalDto>(`AlertasAmbientais/${id}/resolver`, null);
     if (res.success && res.data) return { success: true, data: mapDtoToOccurrence(res.data) } as ApiResponse<any>;
-  } catch (e) {
+  } catch {
     // fallback
   }
 
@@ -282,7 +275,7 @@ export async function deleteAlert(id: number | string): Promise<ApiResponse<null
   try {
     const res = await deleteJson<null>(`AlertasAmbientais/${id}`);
     if (res.success) return { success: true, data: null };
-  } catch (e) {
+  } catch {
     // ignore
   }
 
