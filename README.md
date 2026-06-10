@@ -131,7 +131,7 @@ O backend deve estar executando para que as operações principais (CRUD de Regi
 
 ## Vídeo demonstrativo
 
-- Link: (placeholder) — substitua com link do vídeo do projeto quando disponível.
+- Link: https://youtu.be/e2UM6kDNWJ0
 
 ## Observações finais
 
