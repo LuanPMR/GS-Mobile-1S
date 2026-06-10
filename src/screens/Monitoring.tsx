@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -9,7 +9,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { analisarImagemMonitoramento, ImagemAnaliseDto } from '@/services/analysisService';
 import { getSources } from '@/services/satelliteSourceService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Satellite = { id: number; name: string; region: string };
 
@@ -35,6 +37,11 @@ export default function MonitoringScreen() {
   const mountedRef = useRef(true);
   const [sources, setSources] = useState<Satellite[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Image analysis states
+  const [imageUrlInput, setImageUrlInput] = useState('');
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analysisData, setAnalysisData] = useState<ImagemAnaliseDto | null>(null);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -67,6 +74,24 @@ export default function MonitoringScreen() {
     return () => {
       cancelled = true;
       mountedRef.current = false;
+    };
+  }, []);
+
+  // Load last saved image analysis from storage on mount
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem('nexusverde_last_image_analysis');
+        if (!mounted || !raw) return;
+        const parsed = JSON.parse(raw) as ImagemAnaliseDto;
+        setAnalysisData(parsed ?? null);
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => {
+      mounted = false;
     };
   }, []);
 
@@ -134,6 +159,108 @@ export default function MonitoringScreen() {
               </View>
             </Card>
 
+            <Card style={{ marginTop: Spacing.four }}>
+              <ThemedText type="smallBold">Analisar imagem</ThemedText>
+              <ThemedText type="small">Cole a URL da imagem ou selecione do dispositivo.</ThemedText>
+              <TextInput value={imageUrlInput} onChangeText={setImageUrlInput} placeholder="https://.../imagem.jpg" style={[styles.input, { marginTop: Spacing.two }]} />
+              {analysisError ? <ThemedText type="small" themeColor="danger">{analysisError}</ThemedText> : null}
+              <View style={{ marginTop: Spacing.two, flexDirection: 'row', gap: Spacing.two }}>
+                <Button title={analysisLoading ? 'Analisando...' : 'Analisar URL'} onPress={async () => {
+                  setAnalysisError(null);
+                  if (!imageUrlInput) { setAnalysisError('Informe a URL da imagem ou selecione um arquivo.'); return; }
+                  setAnalysisLoading(true);
+                  try {
+                    const res = await analisarImagemMonitoramento(imageUrlInput);
+                    if (res.success && res.data) {
+                      setAnalysisData(res.data);
+                      await AsyncStorage.setItem('nexusverde_last_image_analysis', JSON.stringify(res.data));
+                    } else {
+                      setAnalysisError(res.error || 'Falha ao analisar imagem.');
+                    }
+                  } catch (e: any) {
+                    setAnalysisError(e?.message || 'Erro desconhecido');
+                  } finally { setAnalysisLoading(false); }
+                }} style={{ flex: 1 }} loading={analysisLoading} />
+                <Button title="Selecionar imagem" onPress={async () => {
+                  setAnalysisError(null);
+                  setAnalysisLoading(true);
+                  try {
+                    // Try to dynamically load expo-image-picker if available
+                    let pickedUri: string | null = null;
+                    try {
+                      // eslint-disable-next-line @typescript-eslint/no-var-requires
+                      const ImagePicker = require('expo-image-picker');
+                      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                      if (!perm.granted) {
+                        setAnalysisError('Permissão para acessar imagens negada.');
+                      } else {
+                        const pick = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+                        // compatibilidade com diferentes versões
+                        // @ts-ignore
+                        if (pick && (pick.assets?.length ? pick.assets[0].uri : pick.uri)) pickedUri = (pick.assets?.length ? pick.assets[0].uri : pick.uri) as string;
+                      }
+                    } catch (ie) {
+                      setAnalysisError('Seleção de imagem não disponível. Instale expo-image-picker para suporte a arquivos.');
+                    }
+
+                    if (!pickedUri) return;
+                    const res = await analisarImagemMonitoramento(pickedUri);
+                    if (res.success && res.data) {
+                      setAnalysisData(res.data);
+                      await AsyncStorage.setItem('nexusverde_last_image_analysis', JSON.stringify(res.data));
+                    } else {
+                      setAnalysisError(res.error || 'Falha ao analisar imagem.');
+                    }
+                  } catch (e: any) {
+                    setAnalysisError(e?.message || 'Erro desconhecido ao selecionar imagem.');
+                  } finally { setAnalysisLoading(false); }
+                }} style={{ flex: 1 }} />
+              </View>
+            </Card>
+
+            <ThemedText type="subtitle" style={{ marginTop: Spacing.four }}>Resultado da análise</ThemedText>
+            {analysisData ? (
+              <Card style={{ marginTop: Spacing.two }}>
+                <ThemedText type="smallBold">Área total analisada</ThemedText>
+                <ThemedText type="small">{analysisData.areaTotal} ha</ThemedText>
+
+                <ThemedText type="smallBold">Área preservada</ThemedText>
+                <ThemedText type="small">{analysisData.areaPreservada} ha</ThemedText>
+
+                <ThemedText type="smallBold">Área desmatada</ThemedText>
+                <ThemedText type="small">{analysisData.areaDesmatada} ha</ThemedText>
+
+                <ThemedText type="smallBold">Área queimada</ThemedText>
+                <ThemedText type="small">{analysisData.areaQueimada} ha</ThemedText>
+
+                <ThemedText type="smallBold">Área em atenção</ThemedText>
+                <ThemedText type="small">{analysisData.areaEmAtencao} ha</ThemedText>
+
+                <ThemedText type="smallBold">% Preservado</ThemedText>
+                <ThemedText type="small">{analysisData.percentualPreservado}%</ThemedText>
+
+                <ThemedText type="smallBold">% Risco</ThemedText>
+                <ThemedText type="small">{analysisData.percentualRisco}%</ThemedText>
+
+                <ThemedText type="smallBold">Status geral</ThemedText>
+                <ThemedText type="small">{analysisData.statusGeral}</ThemedText>
+
+                <ThemedText type="smallBold">Última análise</ThemedText>
+                <ThemedText type="small">{(function format(d?: string | null){ if(!d) return '—'; try { return new Date(d).toLocaleString(); }catch{ return d;} })(analysisData.ultimaAnalise)}</ThemedText>
+
+                {analysisData.observacao ? (
+                  <>
+                    <ThemedText type="smallBold">Observação</ThemedText>
+                    <ThemedText type="small">{analysisData.observacao}</ThemedText>
+                  </>
+                ) : null}
+              </Card>
+            ) : (
+              <Card style={{ marginTop: Spacing.two }}>
+                <ThemedText type="small">Nenhuma análise realizada ainda.</ThemedText>
+              </Card>
+            )}
+
             <ThemedText type="subtitle">Fila de satélites</ThemedText>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.timeline} contentContainerStyle={styles.timelineContent}>
               {(sources ?? SATELLITES).map((s, i) => (
@@ -188,4 +315,12 @@ const styles = StyleSheet.create({
   timelineContent: { gap: Spacing.two, paddingHorizontal: Spacing.one },
   timelineItem: { minWidth: 140, marginRight: Spacing.two },
   explain: { marginTop: Spacing.four, textAlign: 'center' },
+  input: {
+    marginTop: Spacing.one,
+    marginBottom: Spacing.two,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.two,
+    borderRadius: Spacing.two,
+    borderWidth: 1,
+  },
 });

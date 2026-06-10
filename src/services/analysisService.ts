@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ApiResponse, getJson, postJson } from './apiClient';
+import { ApiResponse, getJson, postJson, postMultipart } from './apiClient';
 
 export type AnaliseAmbientalDto = {
   id: number;
@@ -129,6 +129,90 @@ export async function simulateAnalysis(body: { regiaoMonitoradaId: number; fonte
     return { success: true, data: sim };
   } catch (e: any) {
     return { success: false, error: e?.message || 'Falha ao simular análise.' };
+  }
+}
+
+// --- Upload / análise de imagem via API ---
+export type ImagemAnaliseDto = {
+  areaTotal: number;
+  areaPreservada: number;
+  areaDesmatada: number;
+  areaQueimada: number;
+  areaEmAtencao: number;
+  percentualPreservado: number;
+  percentualRisco: number;
+  statusGeral: string;
+  ultimaAnalise: string;
+  observacao?: string | null;
+};
+
+// Endpoint configurável (ajuste conforme backend). Deve apontar para a rota relativa ao /api.
+// API expects: POST /api/AnalisesAmbientais/analisar-imagem
+const ANALISE_IMAGEM_ENDPOINT = 'AnalisesAmbientais/analisar-imagem';
+
+export async function analisarImagemMonitoramento(imageInput: string | any): Promise<ApiResponse<ImagemAnaliseDto>> {
+  try {
+    // imageInput pode ser:
+    // - string (URL remota ou URI local)
+    // - objeto retornado pelo expo-image-picker / DocumentPicker / result.assets[0]
+    let fileUri: string | null = null;
+    let filename = 'imagem.jpg';
+    let inferredType = 'image/jpeg';
+
+    // Normaliza diferentes formatos de entrada
+    if (imageInput && typeof imageInput === 'object') {
+      const candidate = imageInput.assets && imageInput.assets.length ? imageInput.assets[0] : imageInput;
+      if (candidate && candidate.uri) {
+        // candidate pode ter: uri, name, fileName, mimeType, type
+        fileUri = candidate.uri;
+        filename = candidate.name ?? candidate.fileName ?? (candidate.uri.split('/').pop() || filename);
+        inferredType = candidate.mimeType ?? candidate.type ?? (filename.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+      }
+    } else if (typeof imageInput === 'string') {
+      const s = imageInput as string;
+      // Reject data: (base64) URIs — not supported
+      if (s.startsWith('data:')) {
+        return { success: false, error: 'Data URLs/base64 não são suportados. Forneça um URI de arquivo ou selecione uma imagem.' };
+      }
+
+      if (/^https?:\/\//i.test(s)) {
+        // Para URLs remotas, baixar para cache usando expo-file-system (RN/Expo).
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const FileSystem = require('expo-file-system');
+          const url = s;
+          const inferredFilename = (url.split('/').pop() || filename).split('?')[0];
+          const localPath = FileSystem.cacheDirectory + inferredFilename;
+          const dl = await FileSystem.downloadAsync(url, localPath);
+          fileUri = dl.uri;
+          filename = inferredFilename;
+          inferredType = filename.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+        } catch (ex) {
+          console.error('[analysisService] download remote image failed', ex);
+          return { success: false, error: 'Para analisar uma URL remota, instale e configure expo-file-system, ou use um URI/local asset.' };
+        }
+      } else {
+        // URI local passada como string
+        fileUri = s;
+        filename = s.split('/').pop() || filename;
+        inferredType = filename.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+      }
+    }
+
+    if (!fileUri) {
+      return { success: false, error: 'URI de imagem inválida. Forneça um URI válido retornado pelo ImagePicker.' };
+    }
+
+    const filePart = { uri: fileUri, name: filename, type: inferredType };
+    console.log('Imagem enviada:', filePart);
+
+    const res = await postMultipart<ImagemAnaliseDto>(ANALISE_IMAGEM_ENDPOINT, filePart);
+
+    if (res.success && res.data) return { success: true, data: res.data };
+    return { success: false, error: res.error || 'Falha ao analisar imagem.' };
+  } catch (e: any) {
+    console.error('[analysisService] analisarImagemMonitoramento error', e);
+    return { success: false, error: e?.message || 'Erro ao enviar imagem para a API.' };
   }
 }
 

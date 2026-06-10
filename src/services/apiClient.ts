@@ -69,3 +69,39 @@ export async function putJson<T = any>(path: string, body: any): Promise<ApiResp
 export async function deleteJson<T = any>(path: string): Promise<ApiResponse<T>> {
   return safeFetch<T>(path, { method: 'DELETE', headers: { Accept: 'application/json' } });
 }
+
+/**
+ * Helper for multipart/form-data uploads. Intentionally does NOT set
+ * the `Content-Type` header so the runtime can add the correct boundary.
+ */
+export type FileLike = { uri: string; name?: string; type?: string };
+
+export async function postMultipart<T = any>(path: string, data: FormData | FileLike): Promise<ApiResponse<T>> {
+  try {
+    let fd: FormData;
+    // Detect if caller passed a FormData instance (duck-typing append)
+    if (data && typeof (data as any).append === 'function') {
+      fd = data as FormData;
+      console.debug('[apiClient] postMultipart called with existing FormData');
+    } else {
+      const file = data as FileLike;
+      const uri = file?.uri;
+      if (!uri) return { success: false, error: 'No file URI provided to postMultipart' };
+      const name = file.name ?? 'imagem.jpg';
+      const type = file.type ?? 'image/jpeg';
+      fd = new FormData();
+      fd.append('imagem', { uri, name, type } as any);
+      console.log('Imagem enviada:', { uri, name, type });
+    }
+
+    // Ensure we don't set Content-Type so fetch can add the multipart boundary
+    return safeFetch<T>(path, {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+      body: fd,
+    });
+  } catch (err: any) {
+    console.error('[apiClient] postMultipart error', err);
+    return { success: false, error: err?.message || 'Erro ao enviar multipart.' };
+  }
+}
