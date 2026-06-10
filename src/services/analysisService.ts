@@ -152,8 +152,10 @@ const ANALISE_IMAGEM_ENDPOINT = 'AnalisesAmbientais/analisar-imagem';
 
 export async function analisarImagemMonitoramento(imageInput: string | any): Promise<ApiResponse<ImagemAnaliseDto>> {
   try {
+    const formData = new FormData();
+
     // imageInput pode ser:
-    // - string (URL remota ou URI local)
+    // - string (URL remota, data: ou URI local)
     // - objeto retornado pelo expo-image-picker / DocumentPicker / result.assets[0]
     let fileUri: string | null = null;
     let filename = 'imagem.jpg';
@@ -162,34 +164,38 @@ export async function analisarImagemMonitoramento(imageInput: string | any): Pro
     // Normaliza diferentes formatos de entrada
     if (imageInput && typeof imageInput === 'object') {
       const candidate = imageInput.assets && imageInput.assets.length ? imageInput.assets[0] : imageInput;
-      if (candidate && candidate.uri) {
+      if (candidate) {
         // candidate pode ter: uri, name, fileName, mimeType, type
-        fileUri = candidate.uri;
-        filename = candidate.name ?? candidate.fileName ?? (candidate.uri.split('/').pop() || filename);
-        inferredType = candidate.mimeType ?? candidate.type ?? (filename.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+        if (candidate.uri) {
+          fileUri = candidate.uri;
+          filename = candidate.name ?? candidate.fileName ?? (candidate.uri.split('/').pop() || filename);
+          inferredType = candidate.mimeType ?? candidate.type ?? (filename.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+        }
       }
     } else if (typeof imageInput === 'string') {
+      // entrada como string
       const s = imageInput as string;
-      // Reject data: (base64) URIs — not supported
-      if (s.startsWith('data:')) {
-        return { success: false, error: 'Data URLs/base64 não são suportados. Forneça um URI de arquivo ou selecione uma imagem.' };
-      }
-
-      if (/^https?:\/\//i.test(s)) {
-        // Para URLs remotas, baixar para cache usando expo-file-system (RN/Expo).
+      if (/^https?:\/\//i.test(s) || s.startsWith('data:')) {
+        // Para URLs remotas, preferir baixar para cache (expo-file-system) em RN,
+        // evitando append de Blob que pode ser incompatível no RN.
         try {
           // eslint-disable-next-line @typescript-eslint/no-var-requires
           const FileSystem = require('expo-file-system');
           const url = s;
-          const inferredFilename = (url.split('/').pop() || filename).split('?')[0];
+          const inferredFilename = (url.split('/').pop() || 'image.jpg').split('?')[0];
           const localPath = FileSystem.cacheDirectory + inferredFilename;
+          // downloadAsync retorna { uri }
+          // Em Web, FileSystem pode não existir e cairá no catch, onde usamos fetch+blob
           const dl = await FileSystem.downloadAsync(url, localPath);
           fileUri = dl.uri;
           filename = inferredFilename;
           inferredType = filename.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
         } catch (ex) {
-          console.error('[analysisService] download remote image failed', ex);
-          return { success: false, error: 'Para analisar uma URL remota, instale e configure expo-file-system, ou use um URI/local asset.' };
+          // fallback para ambientes web onde expo-file-system não está disponível
+          const resp = await fetch(s);
+          const blob = await resp.blob();
+          const fname = (s.split('/').pop() || 'imagem.jpg').split('?')[0];
+          (formData as any).append('imagem', blob as any, fname);
         }
       } else {
         // URI local passada como string
@@ -199,14 +205,14 @@ export async function analisarImagemMonitoramento(imageInput: string | any): Pro
       }
     }
 
-    if (!fileUri) {
-      return { success: false, error: 'URI de imagem inválida. Forneça um URI válido retornado pelo ImagePicker.' };
+    // Se obtivemos uma URI de arquivo local (inclui cache de download), envie no formato RN esperado
+    if (fileUri) {
+      // RN/Expo compatible FormData part
+      (formData as any).append('imagem', { uri: fileUri, name: filename, type: inferredType } as any);
     }
 
-    const filePart = { uri: fileUri, name: filename, type: inferredType };
-    console.log('Imagem enviada:', filePart);
-
-    const res = await postMultipart<ImagemAnaliseDto>(ANALISE_IMAGEM_ENDPOINT, filePart);
+    // Use helper that intentionally does not set Content-Type so boundary is added
+    const res = await postMultipart<ImagemAnaliseDto>(ANALISE_IMAGEM_ENDPOINT, formData);
 
     if (res.success && res.data) return { success: true, data: res.data };
     return { success: false, error: res.error || 'Falha ao analisar imagem.' };

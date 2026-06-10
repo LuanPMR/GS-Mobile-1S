@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ApiResponse, deleteJson, getJson, postJson, putJson } from './apiClient';
 
+const SIMULATED_IDS_KEY = 'nexusverde_simulated_alerts_v1';
+
 // Backend DTO shape (partial)
 export type AlertaAmbientalDto = {
   id: number;
@@ -12,6 +14,7 @@ export type AlertaAmbientalDto = {
   resolvido: boolean;
   dataCriacao: string;
   dataResolucao?: string | null;
+  isTest?: boolean;
 };
 
 // App-friendly occurrence model (keeps compatibility with older UI code)
@@ -112,7 +115,22 @@ export async function getAlerts(): Promise<ApiResponse<AlertaAmbientalDto[] | Oc
 export async function getAlertsRaw(): Promise<ApiResponse<AlertaAmbientalDto[]>> {
   try {
     const res = await getJson<AlertaAmbientalDto[]>('AlertasAmbientais');
-    if (res.success && res.data) return res;
+    if (res.success && res.data) {
+      // annotate server-returned DTOs with local simulated flags
+      try {
+        const raw = await AsyncStorage.getItem(SIMULATED_IDS_KEY);
+        const ids: string[] = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(ids) && ids.length) {
+          res.data.forEach((d: any) => {
+            const idStr = String(d.id ?? d.Id ?? '');
+            if (ids.includes(idStr)) d.isTest = true;
+          });
+        }
+      } catch {
+        // ignore storage errors
+      }
+      return res;
+    }
   } catch {
     // ignore
   }
@@ -207,6 +225,9 @@ export async function createAlert(payload: any): Promise<ApiResponse<Occurrence>
       dataResolucao: null,
     };
 
+    // Preserve test flag in local DTO so UI can mark simulated alerts
+    (dto as any).isTest = !!payload.isTest || !!payload.__simulado;
+
     local.push(dto);
     await saveLocalAlerts(local);
     await AsyncStorage.setItem(LAST_ID_KEY, String(id));
@@ -214,6 +235,65 @@ export async function createAlert(payload: any): Promise<ApiResponse<Occurrence>
     return { success: true, data: mapDtoToOccurrence(dto) } as ApiResponse<any>;
   } catch (e: any) {
     return { success: false, error: e?.message || 'Falha ao criar alerta.' };
+  }
+}
+
+/**
+ * Gera um alerta de teste (aleatório) para demonstração.
+ * Tenta criar via `createAlert` (usa API se disponível, senão salva localmente).
+ */
+export async function generateTestAlert(): Promise<ApiResponse<Occurrence>> {
+  try {
+    const TIPOS = ['PossivelQueimada', 'PossivelDesmatamento', 'AreaCritica'];
+    const NIVEIS = ['Baixo', 'Medio', 'Alto', 'Critico'];
+    const MENSAGENS = [
+      'Possível foco de calor identificado.',
+      'Alteração brusca da vegetação detectada.',
+      'Área com indícios de desmatamento.',
+      'Anomalia ambiental identificada pela IA.',
+    ];
+    const REGIOES = [
+      { name: 'Amazônia', id: 1 },
+      { name: 'Cerrado', id: 2 },
+      { name: 'Pantanal', id: 3 },
+      { name: 'Mata Atlântica', id: 4 },
+    ];
+
+    const rand = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
+
+    const payload = {
+      regiaoMonitoradaId: rand(REGIOES).id,
+      tipoAlerta: rand(TIPOS),
+      nivelRisco: rand(NIVEIS),
+      mensagem: rand(MENSAGENS),
+      resolvido: false,
+      // marca no payload para o client saber que foi gerado por teste (não altera lógica do backend)
+      __simulado: true,
+    } as any;
+
+    // ensure server/local fallback knows this is a test alert
+    payload.isTest = true;
+    const res = await createAlert(payload);
+    // Persist created ID so later fetches can be annotated as simulated
+    if (res.success && res.data) {
+      try {
+        const idStr = String((res.data as any).id ?? '');
+        const raw = await AsyncStorage.getItem(SIMULATED_IDS_KEY);
+        const ids: string[] = raw ? JSON.parse(raw) : [];
+        if (!ids.includes(idStr)) {
+          ids.push(idStr);
+          await AsyncStorage.setItem(SIMULATED_IDS_KEY, JSON.stringify(ids));
+        }
+      } catch {
+        // ignore storage errors
+      }
+
+      return { success: true, data: { ...(res.data as any), __simulado: true } as any };
+    }
+    return res;
+  } catch (e: any) {
+    console.error('[alertService] generateTestAlert error', e);
+    return { success: false, error: e?.message || 'Falha ao gerar alerta de teste.' };
   }
 }
 
